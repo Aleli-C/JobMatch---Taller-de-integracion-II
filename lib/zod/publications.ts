@@ -1,6 +1,6 @@
 // Esquemas de validación Zod para el dominio de publicaciones
 import { z } from 'zod';
-import { PublicationType } from '../types/publication';
+import { PublicationType, PublicationStatus } from '../types/publication';
 
 export const createPublicationSchema = z.object({
   id_usuario: z.number().int().positive('ID de usuario debe ser positivo'),
@@ -24,4 +24,51 @@ export const createPublicationSchema = z.object({
     }),
   id_ubicacion: z.number().int().positive('ID de ubicación debe ser positivo'),
   id_categoria: z.number().int().positive('ID de categoría debe ser positivo')
+});
+
+// ESQUEMA PARA ListPublication
+export const listPublicationsSchema = z.object({
+  page: z.number().int().min(1, 'La página debe ser mayor a 0').optional().default(1),
+  limit: z.number().int().min(1, 'El límite debe ser mayor a 0').max(100, 'El límite no puede exceder 100').optional().default(10),
+  filters: z.object({
+    titulo: z.string().min(1, 'El título no puede estar vacío').optional(),
+    tipo: z.nativeEnum(PublicationType, {
+      errorMap: () => ({ message: 'Tipo de trabajo no válido' })
+    }).optional(),
+    estado: z.nativeEnum(PublicationStatus, {
+      errorMap: () => ({ message: 'Estado no válido' })
+    }).optional(),
+    id_categoria: z.number().int().positive('ID de categoría debe ser positivo').optional(),
+    id_ubicacion: z.number().int().positive('ID de ubicación debe ser positivo').optional(),
+    remuneracion_min: z.number().min(0, 'La remuneración mínima no puede ser negativa').optional(),
+    remuneracion_max: z.number().min(0, 'La remuneración máxima no puede ser negativa').optional(),
+    fecha_desde: z.date().optional(),
+    fecha_hasta: z.date().optional()
+  }).optional()
+  .refine(filters => {
+    if (!filters) return true;
+    if (filters.remuneracion_min && filters.remuneracion_max) {
+      return filters.remuneracion_min <= filters.remuneracion_max;
+    }
+    return true;
+  }, {
+    message: 'La remuneración mínima no puede ser mayor que la máxima'
+  })
+  .refine(filters => {
+    if (!filters) return true;
+    if (filters.fecha_desde && filters.fecha_hasta) {
+      return filters.fecha_desde <= filters.fecha_hasta;
+    }
+    return true;
+  }, {
+    message: 'La fecha desde no puede ser posterior a la fecha hasta'
+  }),
+  sort: z.object({
+    field: z.enum(['fecha_publicacion', 'remuneracion', 'titulo'], {
+      errorMap: () => ({ message: 'Campo de ordenamiento no válido' })
+    }),
+    order: z.enum(['asc', 'desc'], {
+      errorMap: () => ({ message: 'Orden debe ser asc o desc' })
+    })
+  }).optional().default({ field: 'fecha_publicacion', order: 'desc' })
 });

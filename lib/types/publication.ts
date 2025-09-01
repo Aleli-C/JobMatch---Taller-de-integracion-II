@@ -44,3 +44,41 @@ export interface CreatePublicationResponse {
   data?: Publication;
   error?: string;
 }
+
+// ESTOs TIPOS PARA ListPublication
+
+export interface ListPublicationsParams {
+  page?: number;
+  limit?: number;
+  filters?: PublicationFilters;
+  sort?: PublicationSort;
+}
+
+export interface PublicationFilters {
+  titulo?: string;
+  tipo?: PublicationType;
+  estado?: PublicationStatus;
+  id_categoria?: number;
+  id_ubicacion?: number;
+  remuneracion_min?: number;
+  remuneracion_max?: number;
+  fecha_desde?: Date;
+  fecha_hasta?: Date;
+}
+
+export interface PublicationSort {
+  field: 'fecha_publicacion' | 'remuneracion' | 'titulo';
+  order: 'asc' | 'desc';
+}
+
+export interface ListPublicationsResult {
+  success: boolean;
+  publications?: Publication[];
+  pagination?: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+  error?: string;
+}
