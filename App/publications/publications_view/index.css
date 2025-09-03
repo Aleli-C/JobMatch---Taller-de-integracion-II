@@ -1,0 +1,12 @@
+@import "tailwindcss/preflight";
+@import "tailwindcss/utilities";
+
+
+/* Estilos personalizados opcionales */
+body {
+  margin: 0;
+}
+
+* {
+  box-sizing: border-box;
+}
