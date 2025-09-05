@@ -39,18 +39,18 @@ const FilterBar: FC<FilterBarProps> = ({
 
   return (
     <form
-      className="flex flex-wrap gap-2 items-left bg-white p-3 px-2 rounded-2xl mb-4 shadow-[0_0_8px_0_rgba(0,105,192,0.08)]"
+      className="flex flex-col sm:flex-row flex-wrap gap-2 items-left bg-white p-3 px-2 rounded-2xl mb-4 shadow-[0_0_8px_0_rgba(0,105,192,0.08)]"
       onSubmit={handleSubmit}
     >
       <input
         type="text"
-        className="border border-blue-200 rounded-xl px-3 py-2 text-sm text-black focus:outline-none focus:border-[#0069c0] shadow-[0_0_2px_0_#0069c0]"
+        className="border border-blue-200 rounded-xl px-3 py-2 text-sm text-black focus:outline-none focus:border-[#0069c0] shadow-[0_0_2px_0_#0069c0] flex-1 min-w-[140px]"
         placeholder="Buscar..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
       />
       <select
-        className="border border-gray-200 rounded-xl px-3 py-2 text-sm text-black focus:outline-none focus:border-[#0069c0] shadow-[0_0_2px_0_#0069c0] bg-gray-50"
+        className="border border-gray-200 rounded-xl px-3 py-2 text-sm text-black focus:outline-none focus:border-[#0069c0] shadow-[0_0_2px_0_#0069c0] bg-gray-50 flex-1 min-w-[120px]"
         value={category}
         onChange={(e) => setCategory(e.target.value)}
       >
@@ -60,7 +60,7 @@ const FilterBar: FC<FilterBarProps> = ({
         ))}
       </select>
       <select
-        className="border border-gray-200 rounded-xl px-3 py-2 text-sm text-black focus:outline-none focus:border-[#0069c0] shadow-[0_0_2px_0_#0069c0] bg-gray-50"
+        className="border border-gray-200 rounded-xl px-3 py-2 text-sm text-black focus:outline-none focus:border-[#0069c0] shadow-[0_0_2px_0_#0069c0] bg-gray-50 flex-1 min-w-[120px]"
         value={location}
         onChange={(e) => setLocation(e.target.value)}
       >
@@ -87,13 +87,13 @@ const FilterBar: FC<FilterBarProps> = ({
       />
       <button
         type="submit"
-        className="bg-[#0069c0] text-white px-4 py-2 rounded-xl text-sm hover:bg-[#004a99] transition"
+        className="bg-[#0069c0] text-white px-4 py-2 rounded-xl text-sm hover:bg-[#004a99] transition min-w-[90px]"
       >
         Filtrar
       </button>
       <button
         type="button"
-        className="text-[#0069c0] px-4 py-2 rounded-xl text-sm hover:underline shadow-[0_0_2px_0_#0069c0] bg-gray-50"
+        className="text-[#0069c0] px-4 py-2 rounded-xl text-sm hover:underline shadow-[0_0_2px_0_#0069c0] bg-gray-50 min-w-[90px]"
         onClick={handleReset}
       >
         Limpiar

@@ -19,10 +19,10 @@ const DeleteDialog: FC<DeleteDialogProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/20">
-      <div className="bg-white rounded-lg shadow-lg max-w-sm w-full p-6">
-        <h2 className="text-xl font-bold mb-4 text-[#0060c0]">{title}</h2>
-        <p className="mb-6 text-gray-800">{message}</p>
-        <div className="flex justify-end gap-3">
+      <div className="bg-white rounded-lg shadow-lg w-[95vw] max-w-sm sm:max-w-md md:max-w-lg p-4 sm:p-6 mx-2">
+        <h2 className="text-lg sm:text-xl font-bold mb-4 text-[#0060c0]">{title}</h2>
+        <p className="mb-6 text-gray-800 text-sm sm:text-base">{message}</p>
+        <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
           <button
             className="px-4 py-2 border border-[#0060c0] text-[#0060c0] rounded hover:bg-[#e6f0fa] transition"
             onClick={onClose}
