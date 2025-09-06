@@ -1,7 +1,7 @@
 'use client';
 
-import UserProfileAside from '@/components/UserProfileAside';
-import UserProfileTabs from '@/components/UserProfileTabs';
+import UserProfileAside from '@/components/UsuarioProfileAside';
+import UserProfileTabs from '@/components/UsuarioProfileTabs';
 
 export default function ProfilePage() {
   return (
