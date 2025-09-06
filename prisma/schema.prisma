@@ -1,0 +1,30 @@
+model Publicacion {
+  id_publicacion   Int       @id @default(autoincrement())
+  id_Usuario       Int
+  titulo           String
+  descripcion      String
+  remuneracion     Float
+  id_ubicacion     Int
+  tipo             TipoEnum
+  estado           EstadoEnum
+  fecha_publicacion DateTime
+  fecha_cierre     DateTime
+  id_categoria     Int
+
+  // Relaciones (ajusta los nombres de los modelos relacionados según tu esquema)
+  Usuario    Usuario    @relation(fields: [id_Usuario], references: [id])
+  Ubicacion  Ubicacion  @relation(fields: [id_ubicacion], references: [id])
+  Categoria  Categoria  @relation(fields: [id_categoria], references: [id])
+}
+
+enum TipoEnum {
+  FULLTIME
+  PARTTIME
+  FREELANCE
+}
+
+enum EstadoEnum {
+  ACTIVO
+  INACTIVO
+  CERRADO
+}
