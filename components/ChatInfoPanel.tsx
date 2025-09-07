@@ -1,4 +1,4 @@
-'use client';
+import React from 'react';
 
 const ChatInfoPanel = ({ user, isVisible, onClose }) => {
   if (!user) return null;
@@ -9,23 +9,25 @@ const ChatInfoPanel = ({ user, isVisible, onClose }) => {
         isVisible ? 'translate-x-0' : 'translate-x-full'
       }`}
     >
-      <div className="w-full text-right">
-        <button className="text-gray-500 text-2xl" onClick={onClose}>
-          ✖
+      <div className="w-full flex justify-end">
+        <button className="text-gray-400 hover:text-gray-600 text-2xl font-light leading-none" onClick={onClose}>
+          &times;
         </button>
       </div>
-      <div className="w-24 h-24 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center font-bold text-4xl mb-2">
+      <div className="w-24 h-24 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-4xl mb-2 flex-shrink-0">
         {user.avatar}
       </div>
-      <h2 className="text-xl font-semibold">{user.name}</h2>
+      <h2 className="text-xl font-semibold text-gray-900">{user.name}</h2>
       
-      <div className="w-full p-4 bg-gray-50 rounded-lg">
-        <h3 className="text-sm font-semibold text-blue-500 mb-1">Acerca de</h3>
-        <p className="text-sm text-gray-700">{user.about}</p>
-      </div>
-      <div className="w-full p-4 bg-gray-50 rounded-lg">
-        <h3 className="text-sm font-semibold text-blue-500 mb-1">Contacto</h3>
-        <p className="text-sm text-gray-700">{user.contact}</p>
+      <div className="w-full flex flex-col items-start gap-4 p-4 bg-gray-50 rounded-lg">
+        <div>
+          <h3 className="text-sm font-semibold text-indigo-600 mb-1">Acerca de</h3>
+          <p className="text-sm text-gray-700">{user.about}</p>
+        </div>
+        <div>
+          <h3 className="text-sm font-semibold text-indigo-600 mb-1">Contacto</h3>
+          <p className="text-sm text-gray-700">{user.contact}</p>
+        </div>
       </div>
     </aside>
   );
