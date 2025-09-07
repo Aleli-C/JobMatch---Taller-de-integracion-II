@@ -1,20 +1,299 @@
+// Prisma Schema para JobMatch
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================== Núcleo JobMatch ==============================
+
+model Usuario {
+  idUsuario     Int           @id @default(autoincrement())
+  rut           String        @unique
+  nombre        String
+  correo        String        @unique
+  contrasena    String
+  tipo_usuario  TipoUsuario
+  latitud       Float?
+  longitud      Float?
+  direccion     String?
+
+  // Relaciones
+  perfil        Perfil?
+  publicaciones Publicacion[]
+  postulaciones Postulacion[]
+  guardados     Guardados[]
+  chats1        Chat[]        @relation("ChatUsuario1")
+  chats2        Chat[]        @relation("ChatUsuario2")
+  mensajesTx    Mensajes[]    @relation("MensajesTx")
+  mensajesRx    Mensajes[]    @relation("MensajesRx")
+  bloqueados    Bloqueo[]     @relation("Bloqueados")
+  bloqueadores  Bloqueo[]     @relation("Bloqueadores")
+  reportesHechos Reportes[]   @relation("ReportesHechos")
+  reportesRecibidos Reportes[] @relation("ReportesRecibidos")
+  historialEmpleador Historial_trabajos[] @relation("HistorialEmpleador")
+  historialEmpleado  Historial_trabajos[] @relation("HistorialEmpleado")
+  calificaciones Calificacion[]
+  foros         Foro[]
+  respuestas    Respuestas_foro[]
+
+  @@index([correo])
+  @@index([latitud, longitud])
+}
+
+model Perfil {
+  idPerfil        Int      @id @default(autoincrement())
+  foto            String?  // foto de perfil (URL)
+  habilidades     String?
+  experiencia     String?
+  nivel_insignias NivelInsignias
+  verificacion    Boolean
+  disponibilidad_hr String?
+
+  // Relación 1:1 con Usuario
+  usuario   Usuario @relation(fields: [idUsuario], references: [idUsuario])
+  idUsuario Int     @unique
+}
+
+model Ubicacion {
+  idUbicacion Int      @id @default(autoincrement())
+  ciudad      String
+  comuna      String
+  region      String
+  latitud     Float
+  longitud    Float
+
+  publicaciones Publicacion[]
+
+  @@index([ciudad])
+  @@index([region])
+}
+
+model Categoria {
+  idCategoria Int      @id @default(autoincrement())
+  nombre      String   @db.VarChar(100)
+  descripcion String?
+  icono       String?  // icono de la categoría (URL)
+
+  publicaciones Publicacion[]
+
+  @@index([nombre])
+}
+
 model Publicacion {
-  id_publicacion   Int       @id @default(autoincrement())
-  id_Usuario       Int
+  idPublicacion    Int        @id @default(autoincrement())
   titulo           String
   descripcion      String
   remuneracion     Float
-  id_ubicacion     Int
   tipo             TipoEnum
   estado           EstadoEnum
-  fecha_publicacion DateTime
-  fecha_cierre     DateTime
-  id_categoria     Int
+  fecha_publicacion DateTime  @default(now())
+  fecha_cierre     DateTime?
+  icono            String?   
 
-  // Relaciones (ajusta los nombres de los modelos relacionados según tu esquema)
-  Usuario    Usuario    @relation(fields: [id_Usuario], references: [id])
-  Ubicacion  Ubicacion  @relation(fields: [id_ubicacion], references: [id])
-  Categoria  Categoria  @relation(fields: [id_categoria], references: [id])
+  // Relaciones
+  usuario     Usuario   @relation(fields: [idUsuario], references: [idUsuario])
+  idUsuario   Int
+
+  ubicacion   Ubicacion @relation(fields: [idUbicacion], references: [idUbicacion])
+  idUbicacion Int
+
+  categoria   Categoria @relation(fields: [idCategoria], references: [idCategoria])
+  idCategoria Int
+
+  postulaciones Postulacion[]
+  guardados     Guardados[]
+  reportes      Reportes[]
+  historial     Historial_trabajos[]
+
+  @@index([estado])
+  @@index([fecha_publicacion])
+  @@index([idCategoria])
+}
+
+// ============================== Comunicación y Moderación ==============================
+
+model Chat {
+  idChat     Int        @id @default(autoincrement())
+  creadoEn   DateTime   @default(now())
+
+  usuario1   Usuario    @relation("ChatUsuario1", fields: [idUsuario1], references: [idUsuario])
+  idUsuario1 Int
+
+  usuario2   Usuario    @relation("ChatUsuario2", fields: [idUsuario2], references: [idUsuario])
+  idUsuario2 Int
+
+  mensajes   Mensajes[]
+
+  @@index([idUsuario1])
+  @@index([idUsuario2])
+}
+
+model Mensajes {
+  idMensaje    Int      @id @default(autoincrement())
+  contenido    String
+  enviadoEn    DateTime @default(now())
+
+  chat      Chat    @relation(fields: [idChat], references: [idChat])
+  idChat    Int
+
+  remitente    Usuario @relation("MensajesTx", fields: [idRemitente], references: [idUsuario])
+  idRemitente  Int
+
+  destinatario Usuario @relation("MensajesRx", fields: [idDestinatario], references: [idUsuario])
+  idDestinatario Int
+
+  @@index([idChat])
+  @@index([idRemitente])
+  @@index([idDestinatario])
+}
+
+model Bloqueo {
+  idBloqueo  Int      @id @default(autoincrement())
+  fecha      DateTime @default(now())
+  motivo     String?
+
+  bloqueador Usuario  @relation("Bloqueadores", fields: [idBloqueador], references: [idUsuario])
+  idBloqueador Int
+
+  bloqueado  Usuario  @relation("Bloqueados", fields: [idBloqueado], references: [idUsuario])
+  idBloqueado Int
+
+  @@unique([idBloqueador, idBloqueado])
+  @@index([idBloqueador])
+  @@index([idBloqueado])
+}
+
+model Reportes {
+  idReporte   Int      @id @default(autoincrement())
+  motivo      String
+  fecha       DateTime @default(now())
+  estado      EstadoReporte @default(PENDIENTE)
+
+  reportante  Usuario  @relation("ReportesHechos", fields: [idReportante], references: [idUsuario])
+  idReportante Int
+
+  reportado   Usuario  @relation("ReportesRecibidos", fields: [idReportado], references: [idUsuario])
+  idReportado Int
+
+  publicacion Publicacion? @relation(fields: [idPublicacion], references: [idPublicacion])
+  idPublicacion Int?
+
+  @@index([idReportante])
+  @@index([idReportado])
+  @@index([estado])
+}
+
+// ==============================Postulación, Guardados, Historial, Calificación ==============================
+
+model Postulacion {
+  idPostulacion Int       @id @default(autoincrement())
+  fecha         DateTime  @default(now())
+  estado        EstadoPostulacion @default(ENVIADA)
+
+  usuario     Usuario     @relation(fields: [idUsuario], references: [idUsuario])
+  idUsuario   Int
+
+  publicacion Publicacion @relation(fields: [idPublicacion], references: [idPublicacion])
+  idPublicacion Int
+
+  @@unique([idUsuario, idPublicacion])
+  @@index([estado])
+}
+
+model Guardados {
+  idGuardado Int      @id @default(autoincrement())
+  fecha      DateTime @default(now())
+
+  usuario     Usuario     @relation(fields: [idUsuario], references: [idUsuario])
+  idUsuario   Int
+
+  publicacion Publicacion @relation(fields: [idPublicacion], references: [idPublicacion])
+  idPublicacion Int
+
+  @@unique([idUsuario, idPublicacion])
+}
+
+model Historial_trabajos {
+  idHistorial  Int       @id @default(autoincrement())
+  fechaInicio  DateTime
+  fechaFin     DateTime?
+  descripcion  String?
+
+  empleador   Usuario @relation("HistorialEmpleador", fields: [idEmpleador], references: [idUsuario])
+  idEmpleador Int
+
+  empleado    Usuario @relation("HistorialEmpleado", fields: [idEmpleado], references: [idUsuario])
+  idEmpleado  Int
+
+  publicacion Publicacion? @relation(fields: [idPublicacion], references: [idPublicacion])
+  idPublicacion Int?
+
+  calificaciones Calificacion[]
+
+  @@index([idEmpleador])
+  @@index([idEmpleado])
+}
+
+model Calificacion {
+  idCalificacion Int       @id @default(autoincrement())
+  puntuacion     Puntuacion
+  comentario     String?
+  fecha          DateTime  @default(now())
+
+  historial   Historial_trabajos @relation(fields: [idHistorial], references: [idHistorial])
+  idHistorial Int
+
+  autor      Usuario @relation(fields: [idAutor], references: [idUsuario])
+  idAutor    Int
+
+  @@index([idHistorial])
+  @@index([idAutor])
+}
+
+// ==============================Foro y Respuestas ==============================
+
+model Foro {
+  idForo     Int       @id @default(autoincrement())
+  titulo     String
+  consulta   String
+  fecha      DateTime  @default(now())
+
+  usuario   Usuario    @relation(fields: [idUsuario], references: [idUsuario])
+  idUsuario Int
+
+  respuestas Respuestas_foro[]
+
+  @@index([idUsuario])
+  @@index([fecha])
+}
+
+model Respuestas_foro {
+  idRespuesta Int      @id @default(autoincrement())
+  respuesta   String
+  fecha       DateTime @default(now())
+
+  foro      Foro    @relation(fields: [idForo], references: [idForo])
+  idForo    Int
+
+  usuario   Usuario @relation(fields: [idUsuario], references: [idUsuario])
+  idUsuario Int
+
+  @@index([idForo])
+  @@index([idUsuario])
+  @@index([fecha])
+}
+
+// ==============================Enums globales==============================
+
+
+enum TipoUsuario {
+  EMPLEADOR
+  EMPLEADO
 }
 
 enum TipoEnum {
@@ -27,4 +306,31 @@ enum EstadoEnum {
   ACTIVO
   INACTIVO
   CERRADO
+}
+
+enum NivelInsignias {
+  EXPERTO
+  AVANZADO
+  PRINCIPIANTE
+}
+
+enum EstadoReporte {
+  PENDIENTE
+  REVISADO
+  RESUELTO
+}
+
+enum EstadoPostulacion {
+  ENVIADA
+  ACEPTADA
+  RECHAZADA
+  CANCELADA
+}
+
+enum Puntuacion {
+  UNO
+  DOS
+  TRES
+  CUATRO
+  CINCO
 }
