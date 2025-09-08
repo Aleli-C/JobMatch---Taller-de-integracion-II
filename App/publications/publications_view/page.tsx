@@ -21,36 +21,36 @@ interface FilterOption {
 
 // Utilidad para extraer el rango numérico de un string de salario
 function parseSalaryRange(salaryStr: string): [number, number] | null {
-  // Ejemplo: "CLP20,000 - CLP25,000 / día"
-  const match = salaryStr.match(/CLP\s?([\d.,]+)\s*-\s*CLP\s?([\d.,]+)/i) ||
-                salaryStr.match(/CLP([\d.,]+)\s*-\s*CLP([\d.,]+)/i);
+  const match =
+    salaryStr.match(/CLP\s?([\d.,]+)\s*-\s*CLP\s?([\d.,]+)/i) ||
+    salaryStr.match(/CLP([\d.,]+)\s*-\s*CLP([\d.,]+)/i)
   if (match) {
-    const min = parseInt(match[1].replace(/[.,]/g, ""));
-    const max = parseInt(match[2].replace(/[.,]/g, ""));
-    return [min, max];
+    const min = parseInt(match[1].replace(/[.,]/g, ""))
+    const max = parseInt(match[2].replace(/[.,]/g, ""))
+    return [min, max]
   }
-  // Si es un solo valor, ej: "CLP50,000+"
-  const plusMatch = salaryStr.match(/CLP\s?([\d.,]+)\+/i) || salaryStr.match(/CLP([\d.,]+)\+/i);
+  const plusMatch =
+    salaryStr.match(/CLP\s?([\d.,]+)\+/i) ||
+    salaryStr.match(/CLP([\d.,]+)\+/i)
   if (plusMatch) {
-    const min = parseInt(plusMatch[1].replace(/[.,]/g, ""));
-    return [min, Infinity];
+    const min = parseInt(plusMatch[1].replace(/[.,]/g, ""))
+    return [min, Infinity]
   }
-  return null;
+  return null
 }
 
 // Utilidad para extraer el rango del filtro
 function parseFilterRange(filter: string): [number, number] | null {
-  if (!filter) return null;
-  if (filter === "50+") return [50000, Infinity];
-  const match = filter.match(/(\d+)-(\d+)/);
+  if (!filter) return null
+  if (filter === "50+") return [50000, Infinity]
+  const match = filter.match(/(\d+)-(\d+)/)
   if (match) {
-    return [parseInt(match[1]) * 1000, parseInt(match[2]) * 1000];
+    return [parseInt(match[1]) * 1000, parseInt(match[2]) * 1000]
   }
-  return null;
+  return null
 }
 
 export default function PublicationsPage() {
-  // Datos de ejemplo para los trabajos
   const jobs: Job[] = [
     { id: 1, title: "Ayudante de Mudanza", description: "Se necesita apoyo para cargar y descargar muebles en un traslado.", location: "Temuco, Chile", salary: "CLP20,000 - CLP25,000 / día", icon: "🚚" },
     { id: 2, title: "Paseador de Perros", description: "Buscamos alguien responsable para pasear 2 perros durante la semana.", location: "Villarica, Chile", salary: "CLP5,000 - CLP8,000 / paseo", icon: "🐕" },
@@ -66,20 +66,17 @@ export default function PublicationsPage() {
     { id: 12, title: "Cajero en Minimarket", description: "Atención al cliente y manejo de caja en turno de medio tiempo.", location: "Loncoche, Chile", salary: "CLP18,000 - CLP22,000 / turno", icon: "💳"}
   ]
 
-  // Estado para filtros
   const [filters, setFilters] = useState({
     search: "",
     category: "",
     location: "",
     jobType: "",
     salary: "",
-  });
+  })
 
-  // Estado para paginación
   const [currentPage, setCurrentPage] = useState(1)
   const jobsPerPage = 6
 
-  // Opciones para los filtros
   const categoryOptions: FilterOption[] = [
     { value: "", label: "Todas las categorías" },
     { value: "service", label: "Servicios y Arreglos" },
@@ -115,38 +112,29 @@ export default function PublicationsPage() {
     { value: "50+", label: "CLP50,000+" }
   ]
 
-  // Filtrar trabajos según los filtros seleccionados
   const filteredJobs = jobs.filter(job => {
-    // Filtro por búsqueda
     const matchesSearch =
       !filters.search ||
       job.title.toLowerCase().includes(filters.search.toLowerCase()) ||
-      job.description.toLowerCase().includes(filters.search.toLowerCase());
+      job.description.toLowerCase().includes(filters.search.toLowerCase())
 
-    // Filtro por categoría (puedes adaptar esto según tu modelo de datos)
     const matchesCategory =
-      !filters.category || job.title.toLowerCase().includes(filters.category);
+      !filters.category || job.title.toLowerCase().includes(filters.category)
 
-    // Filtro por ubicación
     const matchesLocation =
-      !filters.location || job.location.toLowerCase().includes(filters.location);
+      !filters.location || job.location.toLowerCase().includes(filters.location)
 
-    // Filtro por tipo de empleo (puedes adaptar esto según tu modelo de datos)
     const matchesJobType =
-      !filters.jobType || job.title.toLowerCase().includes(filters.jobType);
+      !filters.jobType || job.title.toLowerCase().includes(filters.jobType)
 
-    // Filtro por salario (lógica mejorada)
-    let matchesSalary = true;
-    const filterRange = parseFilterRange(filters.salary);
-    const jobRange = parseSalaryRange(job.salary);
+    let matchesSalary = true
+    const filterRange = parseFilterRange(filters.salary)
+    const jobRange = parseSalaryRange(job.salary)
 
     if (filterRange && jobRange) {
-      // Verifica si el rango del trabajo está completamente dentro del rango del filtro
-      matchesSalary = jobRange[0] >= filterRange[0] && jobRange[1] <= filterRange[1];
-      // Si quieres que se muestre si hay cualquier solapamiento, usa:
-      // matchesSalary = jobRange[1] >= filterRange[0] && jobRange[0] <= filterRange[1];
+      matchesSalary = jobRange[1] >= filterRange[0] && jobRange[0] <= filterRange[1]
     } else if (filterRange) {
-      matchesSalary = false;
+      matchesSalary = false
     }
 
     return (
@@ -155,36 +143,37 @@ export default function PublicationsPage() {
       matchesLocation &&
       matchesJobType &&
       matchesSalary
-    );
-  });
+    )
+  })
 
-  // Paginación
   const indexOfLastJob = currentPage * jobsPerPage
   const indexOfFirstJob = indexOfLastJob - jobsPerPage
   const currentJobs = filteredJobs.slice(indexOfFirstJob, indexOfLastJob)
   const totalPages = Math.ceil(filteredJobs.length / jobsPerPage)
 
-  // Handler para el click en un trabajo
   const handleJobClick = (jobId: number) => {
     console.log("Job clicked:", jobId)
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Título */}
-        <section className="mb-8">
-          <h1 className="text-3xl font-bold text-blue-600 mb-2">
+        <section className="mb-6 sm:mb-8 text-center sm:text-left">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-blue-600 mb-2">
             Explora Oportunidades Laborales
           </h1>
+          <p className="text-gray-600 text-sm sm:text-base">
+            Encuentra trabajos disponibles en tu ciudad
+          </p>
         </section>
 
         {/* Filtros */}
-        <section className="mb-8">
+        <section className="mb-6 sm:mb-8">
           <FilterBar
             onFilter={(newFilters) => {
-              setFilters(newFilters);
-              setCurrentPage(1); // Reinicia la paginación al filtrar
+              setFilters(newFilters)
+              setCurrentPage(1)
             }}
             categories={categoryOptions}
             locations={locationOptions}
@@ -194,70 +183,63 @@ export default function PublicationsPage() {
         </section>
 
         {/* Grid de trabajos */}
-        <section className="mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <section className="mb-6 sm:mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {currentJobs.map((job) => (
               <div
                 key={job.id}
-                className="bg-white rounded-lg shadow-sm shadow-blue-100 border border-gray-200 p-6 hover:shadow-lg hover:shadow-blue-200 transition-shadow cursor-pointer"
+                className="bg-white rounded-lg shadow-sm shadow-blue-100 border border-gray-200 p-4 sm:p-6 hover:shadow-lg hover:shadow-blue-200 transition-shadow cursor-pointer"
               >
-                <div className="flex items-start space-x-4 mb-4">
-                  <div className="text-3xl" role="img" aria-label={job.title}>{job.icon}</div>
+                <div className="flex items-start space-x-3 sm:space-x-4 mb-4">
+                  <div className="text-2xl sm:text-3xl" role="img" aria-label={job.title}>
+                    {job.icon}
+                  </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">{job.title}</h3>
-                    <p className="text-gray-600 text-sm leading-relaxed">{job.description}</p>
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-1 sm:mb-2">
+                      {job.title}
+                    </h3>
+                    <p className="text-gray-600 text-xs sm:text-sm leading-relaxed">
+                      {job.description}
+                    </p>
                   </div>
                 </div>
 
-                <div className="flex items-center text-gray-500 text-sm mb-2">
-                  <MapPin className="w-4 h-4 mr-1" />
+                <div className="flex items-center text-gray-500 text-xs sm:text-sm mb-1 sm:mb-2">
+                  <MapPin className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                   {job.location}
                 </div>
 
-                <div className="flex items-center text-gray-500 text-sm mb-4">
-                  <DollarSign className="w-4 h-4 mr-1" />
+                <div className="flex items-center text-gray-500 text-xs sm:text-sm mb-3 sm:mb-4">
+                  <DollarSign className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                   {job.salary}
                 </div>
 
                 <button
                   onClick={() => handleJobClick(job.id)}
-                  className="flex items-center justify-between w-full px-4 py-2 bg-gray-50 hover:bg-gray-100 rounded-md text-gray-700 text-sm font-medium transition-colors"
+                  className="flex items-center justify-between w-full px-3 sm:px-4 py-2 bg-gray-50 hover:bg-gray-100 rounded-md text-gray-700 text-xs sm:text-sm font-medium transition-colors"
                 >
                   Ver Más
-                  <ChevronRight className="w-4 h-4" />
+                  <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
                 </button>
               </div>
             ))}
           </div>
 
           {/* Paginación */}
-          <div className="flex justify-center mt-8 space-x-2">
-            {Array.from({ length: totalPages }, (_, i) => i + 1)
-              .filter((page) =>
-                page === 1 ||
-                page === totalPages ||
-                Math.abs(page - currentPage) <= 1
-              )
-              .map((page, idx, arr) => {
-                const prevPage = arr[idx - 1]
-                const showEllipsis = prevPage && page - prevPage > 1
-
-                return (
-                  <React.Fragment key={page}>
-                    {showEllipsis && <span className="px-2 text-gray-400">...</span>}
-                    <button
-                      onClick={() => setCurrentPage(page)}
-                      className={`px-3 py-1 rounded-md border ${
-                        currentPage === page
-                          ? "bg-blue-600 text-white border-blue-600"
-                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  </React.Fragment>
-                )
-              })}
+          <div className="flex justify-center mt-6 sm:mt-8 space-x-1 sm:space-x-2 flex-wrap">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`px-2 sm:px-3 py-1 rounded-md border text-xs sm:text-sm ${
+                  currentPage === page
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                }`}
+              >
+                {page}
+              </button>
+            ))}
           </div>
         </section>
       </main>
