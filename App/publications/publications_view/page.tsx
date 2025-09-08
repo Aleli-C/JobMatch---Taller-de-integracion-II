@@ -1,7 +1,8 @@
 "use client"
 
 import React, { useState } from "react"
-import { MapPin, Briefcase, DollarSign, ChevronRight } from "lucide-react"
+import { MapPin, DollarSign, ChevronRight } from "lucide-react"
+import FilterBar from "../components/FilterBar"
 
 // Definición de tipos/interfaces
 interface Job {
@@ -16,6 +17,36 @@ interface Job {
 interface FilterOption {
   value: string
   label: string
+}
+
+// Utilidad para extraer el rango numérico de un string de salario
+function parseSalaryRange(salaryStr: string): [number, number] | null {
+  // Ejemplo: "CLP20,000 - CLP25,000 / día"
+  const match = salaryStr.match(/CLP\s?([\d.,]+)\s*-\s*CLP\s?([\d.,]+)/i) ||
+                salaryStr.match(/CLP([\d.,]+)\s*-\s*CLP([\d.,]+)/i);
+  if (match) {
+    const min = parseInt(match[1].replace(/[.,]/g, ""));
+    const max = parseInt(match[2].replace(/[.,]/g, ""));
+    return [min, max];
+  }
+  // Si es un solo valor, ej: "CLP50,000+"
+  const plusMatch = salaryStr.match(/CLP\s?([\d.,]+)\+/i) || salaryStr.match(/CLP([\d.,]+)\+/i);
+  if (plusMatch) {
+    const min = parseInt(plusMatch[1].replace(/[.,]/g, ""));
+    return [min, Infinity];
+  }
+  return null;
+}
+
+// Utilidad para extraer el rango del filtro
+function parseFilterRange(filter: string): [number, number] | null {
+  if (!filter) return null;
+  if (filter === "50+") return [50000, Infinity];
+  const match = filter.match(/(\d+)-(\d+)/);
+  if (match) {
+    return [parseInt(match[1]) * 1000, parseInt(match[2]) * 1000];
+  }
+  return null;
 }
 
 export default function PublicationsPage() {
@@ -35,15 +66,18 @@ export default function PublicationsPage() {
     { id: 12, title: "Cajero en Minimarket", description: "Atención al cliente y manejo de caja en turno de medio tiempo.", location: "Loncoche, Chile", salary: "CLP18,000 - CLP22,000 / turno", icon: "💳"}
   ]
 
+  // Estado para filtros
+  const [filters, setFilters] = useState({
+    search: "",
+    category: "",
+    location: "",
+    jobType: "",
+    salary: "",
+  });
+
   // Estado para paginación
   const [currentPage, setCurrentPage] = useState(1)
   const jobsPerPage = 6
-
-  // Calcular trabajos por página
-  const indexOfLastJob = currentPage * jobsPerPage
-  const indexOfFirstJob = indexOfLastJob - jobsPerPage
-  const currentJobs = jobs.slice(indexOfFirstJob, indexOfLastJob)
-  const totalPages = Math.ceil(jobs.length / jobsPerPage)
 
   // Opciones para los filtros
   const categoryOptions: FilterOption[] = [
@@ -73,21 +107,64 @@ export default function PublicationsPage() {
 
   const salaryOptions: FilterOption[] = [
     { value: "", label: "Todos los rangos" },
+    { value: "0-10", label: "CLP0 - CLP10,000" },
+    { value: "10-20", label: "CLP10,000 - CLP20,000" },
     { value: "20-30", label: "CLP20,000 - CLP30,000" },
     { value: "30-40", label: "CLP30,000 - CLP40,000" },
     { value: "40-50", label: "CLP40,000 - CLP50,000" },
     { value: "50+", label: "CLP50,000+" }
   ]
 
-  // Handlers
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    console.log("Búsqueda:", event.target.value)
-  }
+  // Filtrar trabajos según los filtros seleccionados
+  const filteredJobs = jobs.filter(job => {
+    // Filtro por búsqueda
+    const matchesSearch =
+      !filters.search ||
+      job.title.toLowerCase().includes(filters.search.toLowerCase()) ||
+      job.description.toLowerCase().includes(filters.search.toLowerCase());
 
-  const handleFilterChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    console.log("Filtro cambiado:", event.target.name, event.target.value)
-  }
+    // Filtro por categoría (puedes adaptar esto según tu modelo de datos)
+    const matchesCategory =
+      !filters.category || job.title.toLowerCase().includes(filters.category);
 
+    // Filtro por ubicación
+    const matchesLocation =
+      !filters.location || job.location.toLowerCase().includes(filters.location);
+
+    // Filtro por tipo de empleo (puedes adaptar esto según tu modelo de datos)
+    const matchesJobType =
+      !filters.jobType || job.title.toLowerCase().includes(filters.jobType);
+
+    // Filtro por salario (lógica mejorada)
+    let matchesSalary = true;
+    const filterRange = parseFilterRange(filters.salary);
+    const jobRange = parseSalaryRange(job.salary);
+
+    if (filterRange && jobRange) {
+      // Verifica si el rango del trabajo está completamente dentro del rango del filtro
+      matchesSalary = jobRange[0] >= filterRange[0] && jobRange[1] <= filterRange[1];
+      // Si quieres que se muestre si hay cualquier solapamiento, usa:
+      // matchesSalary = jobRange[1] >= filterRange[0] && jobRange[0] <= filterRange[1];
+    } else if (filterRange) {
+      matchesSalary = false;
+    }
+
+    return (
+      matchesSearch &&
+      matchesCategory &&
+      matchesLocation &&
+      matchesJobType &&
+      matchesSalary
+    );
+  });
+
+  // Paginación
+  const indexOfLastJob = currentPage * jobsPerPage
+  const indexOfFirstJob = indexOfLastJob - jobsPerPage
+  const currentJobs = filteredJobs.slice(indexOfFirstJob, indexOfLastJob)
+  const totalPages = Math.ceil(filteredJobs.length / jobsPerPage)
+
+  // Handler para el click en un trabajo
   const handleJobClick = (jobId: number) => {
     console.log("Job clicked:", jobId)
   }
@@ -104,87 +181,16 @@ export default function PublicationsPage() {
 
         {/* Filtros */}
         <section className="mb-8">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 shadow-blue-200">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {/* Categoría */}
-              <div className="space-y-2">
-                <label className="flex items-center text-sm font-medium text-gray-700">
-                  <Briefcase className="w-4 h-4 mr-2" />
-                  Categoría
-                </label>
-                <select
-                  name="category"
-                  onChange={handleFilterChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  {categoryOptions.map((option) => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Ubicación */}
-              <div className="space-y-2">
-                <label className="flex items-center text-sm font-medium text-gray-700">
-                  <MapPin className="w-4 h-4 mr-2" />
-                  Ubicación
-                </label>
-                <select
-                  name="location"
-                  onChange={handleFilterChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  {locationOptions.map((option) => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Tipo de empleo */}
-              <div className="space-y-2">
-                <label className="flex items-center text-sm font-medium text-gray-700">
-                  <Briefcase className="w-4 h-4 mr-2" />
-                  Tipo de Empleo
-                </label>
-                <select
-                  name="jobType"
-                  onChange={handleFilterChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  {jobTypeOptions.map((option) => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Salario */}
-              <div className="space-y-2">
-                <label className="flex items-center text-sm font-medium text-gray-700">
-                  <DollarSign className="w-4 h-4 mr-2" />
-                  Salario
-                </label>
-                <select
-                  name="salary"
-                  onChange={handleFilterChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  {salaryOptions.map((option) => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Búsqueda */}
-            <div className="mt-4">
-              <input
-                type="text"
-                placeholder="Filtrar por palabra clave..."
-                onChange={handleSearchChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-          </div>
+          <FilterBar
+            onFilter={(newFilters) => {
+              setFilters(newFilters);
+              setCurrentPage(1); // Reinicia la paginación al filtrar
+            }}
+            categories={categoryOptions}
+            locations={locationOptions}
+            jobTypes={jobTypeOptions}
+            salaries={salaryOptions}
+          />
         </section>
 
         {/* Grid de trabajos */}
