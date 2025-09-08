@@ -1,93 +1,80 @@
 // Lógica compartida - Lógica de negocio para publicaciones
 import { z } from 'zod';
 import { PublicationRepository } from '../repositories/publication-repository';
-import { createPublicationSchema, listPublicationsSchema } from '../zod/publications';
+import { 
+  createPublicationSchema, 
+  listPublicationsSchema, 
+  deletePublicationSchema 
+} from '../zod/publications';
 import { 
   CreatePublicationRequest, 
   CreatePublicationResponse, 
   ListPublicationsParams, 
-  ListPublicationsResult 
+  ListPublicationsResult,
+  DeletePublicationRequest,
+  DeletePublicationResponse 
 } from '../types/publication';
 import { buildPagination } from '../utils/pagination';
 
 export class PublicationService {
   constructor(private repository: PublicationRepository) {}
 
+  // --- PUBLIC METHODS ---
   async createPublication(request: CreatePublicationRequest): Promise<CreatePublicationResponse> {
-    try {
-      // 1. Validar datos de entrada
+    return this.safeExecute(async () => {
       const validatedData = createPublicationSchema.parse(request);
 
-      // 2. Validar que las entidades relacionadas existan
-      const entitiesValid = await this.repository.validateRelatedEntities(
-        validatedData.idUbicacion,
-        validatedData.idCategoria
-      );
+      await this.ensureValidEntities(validatedData.idUbicacion, validatedData.idCategoria);
 
-      if (!entitiesValid) {
-        return {
-          success: false,
-          error: 'Ubicación o categoría no válidas'
-        };
-      }
-
-      // 3. Crear la publicación
       const publication = await this.repository.create(validatedData);
-
-      return {
-        success: true,
-        data: publication
-      };
-
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return {
-          success: false,
-          error: error.errors.map(e => e.message).join(', ')
-        };
-      }
-
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Error interno del servidor'
-      };
-    }
+      return { success: true, data: publication };
+    });
   }
 
   async listPublications(params: ListPublicationsParams = {}): Promise<ListPublicationsResult> {
-    try {
-      // 1. Validar datos de entrada
+    return this.safeExecute(async () => {
       const validatedParams = listPublicationsSchema.parse(params);
-
-      // 2. Obtener publicaciones del repositorio
       const result = await this.repository.list(validatedParams);
 
-      // 3. Usar helper para calcular paginación
       const pagination = buildPagination(
         result.total,
         validatedParams.page,
         validatedParams.limit
       );
 
-      return {
-        success: true,
-        publications: result.publications,
-        pagination
-      };
+      return { success: true, publications: result.publications, pagination };
+    });
+  }
 
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return {
-          success: false,
-          error: error.errors.map(e => e.message).join(', ')
-        };
+  async deletePublication(request: DeletePublicationRequest): Promise<DeletePublicationResponse> {
+    return this.safeExecute(async () => {
+      const validatedData = deletePublicationSchema.parse(request);
+
+      const deleted = await this.repository.delete(validatedData);
+      if (!deleted) {
+        return { success: false, error: 'No autorizado o publicación no encontrada' };
       }
 
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Error interno del servidor'
-      };
+      return { success: true };
+    });
+  }
+
+  // --- PRIVATE HELPERS ---
+  private async ensureValidEntities(idUbicacion: number, idCategoria: number): Promise<void> {
+    const valid = await this.repository.validateRelatedEntities(idUbicacion, idCategoria);
+    if (!valid) {
+      throw new Error('Ubicación o categoría no válidas');
+    }
+  }
+
+  private async safeExecute<T>(fn: () => Promise<T>): Promise<T | { success: false; error: string }> {
+    try {
+      return await fn();
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return { success: false, error: error.errors.map(e => e.message).join(', ') } as any;
+      }
+      return { success: false, error: error instanceof Error ? error.message : 'Error interno del servidor' } as any;
     }
   }
 }
-

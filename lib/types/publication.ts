@@ -1,6 +1,11 @@
 // Tipos e interfaces que describen la forma de una Publicación
+// ========================
+// Dominio: Publicaciones
+// ========================
+
+// --- Entidad principal ---
 export interface Publication {
-  idPublicacion?: number;
+  idPublicacion: number;
   idUsuario: number;
   titulo: string;
   descripcion: string;
@@ -13,6 +18,7 @@ export interface Publication {
   idCategoria: number;
 }
 
+// --- Enums ---
 export enum PublicationType {
   FULLTIME = 'FULLTIME',
   PARTTIME = 'PARTTIME',
@@ -25,6 +31,9 @@ export enum PublicationStatus {
   CERRADO = 'CERRADO',
 }
 
+// ========================
+// Create Publication
+// ========================
 export interface CreatePublicationRequest {
   idUsuario: number;
   titulo: string;
@@ -42,8 +51,9 @@ export interface CreatePublicationResponse {
   error?: string;
 }
 
-// ==== Tipos para ListPublication ====
-
+// ========================
+// List Publications
+// ========================
 export interface ListPublicationsParams {
   page?: number;
   limit?: number;
@@ -77,5 +87,18 @@ export interface ListPublicationsResult {
     limit: number;
     totalPages: number;
   };
+  error?: string;
+}
+
+// ========================
+// Delete Publication
+// ========================
+export interface DeletePublicationRequest {
+  idPublicacion: number;
+  idUsuario: number; // Ownership check
+}
+
+export interface DeletePublicationResponse {
+  success: boolean;
   error?: string;
 }

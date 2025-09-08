@@ -1,11 +1,12 @@
-// Implementación mock para desarrollo sin BD (lógica compartida) 
+// Implementación mock para desarrollo sin BD (lógica compartida)
 import { PublicationRepository } from './publication-repository';
 import { 
   Publication, 
   CreatePublicationRequest, 
   PublicationStatus, 
   ListPublicationsParams, 
-  PublicationFilters 
+  PublicationFilters,
+  DeletePublicationRequest
 } from '../types/publication';
 
 export class MockPublicationRepository implements PublicationRepository {
@@ -45,6 +46,7 @@ export class MockPublicationRepository implements PublicationRepository {
   }
 
   async validateRelatedEntities(ubicacionId: number, categoriaId: number): Promise<boolean> {
+    // La validación en el mock es simplificada
     return ubicacionId > 0 && categoriaId > 0;
   }
 
@@ -57,6 +59,24 @@ export class MockPublicationRepository implements PublicationRepository {
       publications: paginated,
       total: result.length
     };
+  }
+
+  async findById(id: number): Promise<Publication | undefined> {
+    return this.publications.find(p => p.idPublicacion === id);
+  }
+
+  async delete(data: DeletePublicationRequest): Promise<boolean> {
+    const index = this.publications.findIndex(
+      p => p.idPublicacion === data.idPublicacion && p.idUsuario === data.idUsuario
+    );
+
+    if (index === -1) {
+      // Si la publicación no existe o el ownership no coincide, devolvemos false
+      return false;
+    }
+
+    this.publications.splice(index, 1);
+    return true;
   }
 
   // Filtros usando Strategy Pattern

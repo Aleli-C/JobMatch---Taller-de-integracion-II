@@ -72,3 +72,8 @@ export const listPublicationsSchema = z.object({
     })
   }).optional().default({ field: 'fechaPublicacion', order: 'desc' })
 });
+
+export const deletePublicationSchema = z.object({
+  idPublicacion: z.number().int().positive('ID de publicación inválido'),
+  idUsuario: z.number().int().positive('ID de usuario inválido')
+});
