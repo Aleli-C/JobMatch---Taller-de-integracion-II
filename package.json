@@ -10,7 +10,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "npm run test:setup && vitest",
+    "test:setup": "cross-env DATABASE_URL=%TEST_DATABASE_URL% npx prisma db push --schema=./prisma/schema.test.prisma --force-reset --accept-data-loss"
   },
   "repository": {
     "type": "git",
@@ -35,11 +37,15 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.12",
-    "@types/node": "24.3.0",
+    "@types/node": "^24.3.0",
     "@types/react": "19.1.12",
+    "cross-env": "^10.0.0",
     "postcss": "^8.5.6",
     "prisma": "^6.15.0",
+    "supertest": "^7.1.4",
     "tailwindcss": "^4.1.12",
-    "typescript": "5.9.2"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
   }
 }

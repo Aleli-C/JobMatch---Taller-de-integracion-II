@@ -1,13 +1,14 @@
-// Prisma Schema para JobMatch
+// prisma/schema.test.prisma
+
+datasource db {
+  provider = "sqlite"
+  url      = env("TEST_DATABASE_URL") // Usará la variable de tests
+}
 
 generator client {
   provider = "prisma-client-js"
 }
 
-datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
-}
 
 // ============================== Núcleo JobMatch ==============================
 
