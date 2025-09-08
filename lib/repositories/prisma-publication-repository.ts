@@ -10,8 +10,8 @@ export class PrismaPublicationRepository implements PublicationRepository {
     const publication = await this.prisma.publicacion.create({
       data: {
         ...data,
-        estado: PublicationStatus.ACTIVA,
-        fecha_publicacion: new Date()
+        estado: PublicationStatus.ACTIVO,
+        fechaPublicacion: new Date()
       }
     });
 
@@ -20,8 +20,8 @@ export class PrismaPublicationRepository implements PublicationRepository {
 
   async validateRelatedEntities(ubicacionId: number, categoriaId: number): Promise<boolean> {
     const [ubicacion, categoria] = await Promise.all([
-      this.prisma.ubicacion.findUnique({ where: { id_ubicacion: ubicacionId } }),
-      this.prisma.categoria.findUnique({ where: { id_categoria: categoriaId } })
+      this.prisma.ubicacion.findUnique({ where: { idUbicacion: ubicacionId } }),
+      this.prisma.categoria.findUnique({ where: { idCategoria: categoriaId } })
     ]);
 
     return !!(ubicacion && categoria);

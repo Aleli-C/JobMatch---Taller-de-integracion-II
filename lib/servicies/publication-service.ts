@@ -20,8 +20,8 @@ export class PublicationService {
 
       // 2. Validar que las entidades relacionadas existan
       const entitiesValid = await this.repository.validateRelatedEntities(
-        validatedData.id_ubicacion,
-        validatedData.id_categoria
+        validatedData.idUbicacion,
+        validatedData.idCategoria
       );
 
       if (!entitiesValid) {
@@ -90,3 +90,4 @@ export class PublicationService {
     }
   }
 }
+

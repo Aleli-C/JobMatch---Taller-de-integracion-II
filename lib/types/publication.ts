@@ -1,42 +1,39 @@
 // Tipos e interfaces que describen la forma de una Publicación
 export interface Publication {
-  id_publicacion?: number;
-  id_usuario: number;
+  idPublicacion?: number;
+  idUsuario: number;
   titulo: string;
   descripcion: string;
   remuneracion: number;
   tipo: PublicationType;
   estado: PublicationStatus;
-  fecha_publicacion: Date;
-  fecha_cierre: Date;
-  id_ubicacion: number;
-  id_categoria: number;
+  fechaPublicacion: Date;
+  fechaCierre?: Date;
+  idUbicacion: number;
+  idCategoria: number;
 }
 
 export enum PublicationType {
-  TIEMPO_COMPLETO = 'tiempo_completo',
-  MEDIO_TIEMPO = 'medio_tiempo',
-  FREELANCE = 'freelance',
-  PRACTICAS = 'practicas',
-  PROYECTO = 'proyecto'
+  FULLTIME = 'FULLTIME',
+  PARTTIME = 'PARTTIME',
+  FREELANCE = 'FREELANCE',
 }
 
 export enum PublicationStatus {
-  ACTIVA = 'activa',
-  PAUSADA = 'pausada',
-  CERRADA = 'cerrada',
-  VENCIDA = 'vencida'
+  ACTIVO = 'ACTIVO',
+  INACTIVO = 'INACTIVO',
+  CERRADO = 'CERRADO',
 }
 
 export interface CreatePublicationRequest {
-  id_usuario: number;
+  idUsuario: number;
   titulo: string;
   descripcion: string;
   remuneracion: number;
   tipo: PublicationType;
-  fecha_cierre: Date;
-  id_ubicacion: number;
-  id_categoria: number;
+  fechaCierre?: Date;
+  idUbicacion: number;
+  idCategoria: number;
 }
 
 export interface CreatePublicationResponse {
@@ -45,7 +42,7 @@ export interface CreatePublicationResponse {
   error?: string;
 }
 
-// ESTOs TIPOS PARA ListPublication
+// ==== Tipos para ListPublication ====
 
 export interface ListPublicationsParams {
   page?: number;
@@ -58,16 +55,16 @@ export interface PublicationFilters {
   titulo?: string;
   tipo?: PublicationType;
   estado?: PublicationStatus;
-  id_categoria?: number;
-  id_ubicacion?: number;
-  remuneracion_min?: number;
-  remuneracion_max?: number;
-  fecha_desde?: Date;
-  fecha_hasta?: Date;
+  idCategoria?: number;
+  idUbicacion?: number;
+  remuneracionMin?: number;
+  remuneracionMax?: number;
+  fechaDesde?: Date;
+  fechaHasta?: Date;
 }
 
 export interface PublicationSort {
-  field: 'fecha_publicacion' | 'remuneracion' | 'titulo';
+  field: 'fechaPublicacion' | 'remuneracion' | 'titulo';
   order: 'asc' | 'desc';
 }
 

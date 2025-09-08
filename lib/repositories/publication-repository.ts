@@ -3,9 +3,9 @@ import { Publication, CreatePublicationRequest, ListPublicationsParams } from '.
 
 export interface PublicationRepository {
   create(data: CreatePublicationRequest): Promise<Publication>;
-  validateRelatedEntities(ubicacionId: number, categoriaId: number): Promise<boolean>;
+  validateRelatedEntities(idUbicacion: number, idCategoria: number): Promise<boolean>;
   
-  // Método para ListPublication:
+  // Método para listar publicaciones:
   list(params: ListPublicationsParams): Promise<{
     publications: Publication[];
     total: number;

@@ -1,6 +1,12 @@
-// Implementación mock para desarrollo sin BD (lógica compartida) Es por el momento como no tenemos BD
+// Implementación mock para desarrollo sin BD (lógica compartida) 
 import { PublicationRepository } from './publication-repository';
-import { Publication, CreatePublicationRequest, PublicationStatus, ListPublicationsParams, PublicationFilters } from '../types/publication';
+import { 
+  Publication, 
+  CreatePublicationRequest, 
+  PublicationStatus, 
+  ListPublicationsParams, 
+  PublicationFilters 
+} from '../types/publication';
 
 export class MockPublicationRepository implements PublicationRepository {
   private publications: Publication[] = [];
@@ -11,27 +17,27 @@ export class MockPublicationRepository implements PublicationRepository {
     titulo: (p, v) => p.titulo.toLowerCase().includes(v.toLowerCase()),
     tipo: (p, v) => p.tipo === v,
     estado: (p, v) => p.estado === v,
-    id_categoria: (p, v) => p.id_categoria === v,
-    id_ubicacion: (p, v) => p.id_ubicacion === v,
-    remuneracion_min: (p, v) => p.remuneracion >= v,
-    remuneracion_max: (p, v) => p.remuneracion <= v,
-    fecha_desde: (p, v) => p.fecha_publicacion >= v,
-    fecha_hasta: (p, v) => p.fecha_publicacion <= v,
+    idCategoria: (p, v) => p.idCategoria === v,
+    idUbicacion: (p, v) => p.idUbicacion === v,
+    remuneracionMin: (p, v) => p.remuneracion >= v,
+    remuneracionMax: (p, v) => p.remuneracion <= v,
+    fechaDesde: (p, v) => p.fechaPublicacion >= v,
+    fechaHasta: (p, v) => p.fechaPublicacion <= v,
   };
 
   // 📊 Estrategias de ordenamiento declarativas
   private sortStrategies: Record<string, (a: Publication, b: Publication) => number> = {
-    fecha_publicacion: (a, b) => a.fecha_publicacion.getTime() - b.fecha_publicacion.getTime(),
+    fechaPublicacion: (a, b) => a.fechaPublicacion.getTime() - b.fechaPublicacion.getTime(),
     remuneracion: (a, b) => a.remuneracion - b.remuneracion,
     titulo: (a, b) => a.titulo.localeCompare(b.titulo),
   };
 
   async create(data: CreatePublicationRequest): Promise<Publication> {
     const publication: Publication = {
-      id_publicacion: this.nextId++,
+      idPublicacion: this.nextId++,
       ...data,
-      estado: PublicationStatus.ACTIVA,
-      fecha_publicacion: new Date()
+      estado: PublicationStatus.ACTIVO,
+      fechaPublicacion: new Date()
     };
 
     this.publications.push(publication);
@@ -73,7 +79,7 @@ export class MockPublicationRepository implements PublicationRepository {
   // Ordenamiento usando Strategy Pattern
   public applySorting(publications: Publication[], sort?: { field: string; order: string }): Publication[] {
     if (!sort) {
-      return [...publications].sort((a, b) => b.fecha_publicacion.getTime() - a.fecha_publicacion.getTime());
+      return [...publications].sort((a, b) => b.fechaPublicacion.getTime() - a.fechaPublicacion.getTime());
     }
 
     const sortFn = this.sortStrategies[sort.field];
