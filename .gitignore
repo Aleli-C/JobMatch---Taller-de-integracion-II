@@ -15,4 +15,5 @@ prisma/*.sqlite-wal
 .vercel/
 .netlify/
 
+prisma/migrations/
 
