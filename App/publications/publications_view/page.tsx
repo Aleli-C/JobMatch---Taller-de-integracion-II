@@ -2,7 +2,7 @@
 
 import React, { useState } from "react"
 import { MapPin, DollarSign, ChevronRight } from "lucide-react"
-import FilterBar from "../components/FilterBar"
+import FilterBar from "../../../components/FilterBar"
 
 // Definición de tipos/interfaces
 interface Job {
