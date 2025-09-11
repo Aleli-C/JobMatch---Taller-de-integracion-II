@@ -20,10 +20,7 @@ export const registerSchema = z
     correo: z.string().email("Debe ser un correo válido"),
     contrasena: z.string().min(6, "La contraseña debe tener mínimo 6 caracteres"),
     confirmarContrasena: z.string(),
-    
-    // Aquí está el cambio:
-    tipo_usuario: z.enum(["EMPLEADOR", "EMPLEADO"]), // ✅ ¡Corregido!
-
+    tipo_usuario: z.enum(["EMPLEADOR", "EMPLEADO"]),
     ubicacion: z.date().optional(),
   })
   .refine((data) => data.contrasena === data.confirmarContrasena, {
@@ -31,6 +28,12 @@ export const registerSchema = z
     path: ["confirmarContrasena"],
   });
 
+// ✅ INICIO DE LA CORRECCIÓN
+// Solicitud de reseteo de contraseña → usa solo correo
+export const requestResetSchema = z.object({
+  correo: z.string().email("Debe ser un correo válido"),
+});
+// ✅ FIN DE LA CORRECCIÓN
 
 // Reset con token
 export const resetPasswordSchema = z
@@ -47,5 +50,5 @@ export const resetPasswordSchema = z
 // ---- Tipos inferidos ----
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
-export type RequestResetInput = z.infer<typeof requestResetSchema>;
+export type RequestResetInput = z.infer<typeof requestResetSchema>; // Ahora esto funcionará
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
