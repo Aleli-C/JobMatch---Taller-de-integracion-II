@@ -1,10 +1,7 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
 
-// importa tu logo (ajusta la ruta según tu proyecto)
-import Logo from "./logo sin fondo.png";
 
-// Configuración de eventos (se mantiene para títulos y mensajes)
 const eventConfigs = {
   LOGIN: {
     title: 'Inicio de Sesión',
@@ -48,7 +45,6 @@ const eventConfigs = {
   }
 } as const;
 
-// Tipos TypeScript exportados
 export interface Toast {
   id: number;
   type: keyof typeof eventConfigs;
@@ -74,7 +70,6 @@ interface ToastContainerProps {
   onRemoveToast: (id: number) => void;
 }
 
-// Hook personalizado para manejar notificaciones
 export const useToast = () => {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
@@ -123,7 +118,6 @@ export const ToastCard: React.FC<ToastCardProps> = ({ toast, onRemove }) => {
     <div className="bg-white rounded-xl shadow-xl border border-gray-200 p-5 mb-4 max-w-md animate-slideInUp hover:shadow-2xl transition-all duration-300">
       <div className="flex items-start justify-between">
         <div className="flex items-start space-x-4">
-          {/* Logo fijo en todas las notificaciones */}
           <img 
             src="../public/logo sin fondo.png"
             alt="Logo empresa" 
@@ -174,7 +168,6 @@ export const ToastContainer: React.FC<ToastContainerProps> = ({ toasts, onRemove
         </div>
       </div>
       
-      {/* Estilos para animaciones */}
       <style dangerouslySetInnerHTML={{
         __html: `
           @keyframes slideInUp {
