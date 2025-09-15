@@ -63,21 +63,21 @@ const Forum = () => {
     const buttons = [];
     if (currentPage > 1) {
       buttons.push(
-        <a key="prev" href="#" className="page-link" onClick={(e) => { e.preventDefault(); setCurrentPage(currentPage - 1); }}>
+        <a key="prev" href="#" className="text-blue-500 hover:text-blue-700 mx-1" onClick={(e) => { e.preventDefault(); setCurrentPage(currentPage - 1); }}>
           « Anterior
         </a>
       );
     }
     for (let i = 1; i <= totalPages; i++) {
       buttons.push(
-        <a key={i} href="#" className={`page-link ${i === currentPage ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setCurrentPage(i); }}>
+        <a key={i} href="#" className={`mx-1 px-3 py-1 rounded ${i === currentPage ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`} onClick={(e) => { e.preventDefault(); setCurrentPage(i); }}>
           {i}
         </a>
       );
     }
     if (currentPage < totalPages) {
       buttons.push(
-        <a key="next" href="#" className="page-link" onClick={(e) => { e.preventDefault(); setCurrentPage(currentPage + 1); }}>
+        <a key="next" href="#" className="text-blue-500 hover:text-blue-700 mx-1" onClick={(e) => { e.preventDefault(); setCurrentPage(currentPage + 1); }}>
           Siguiente »
         </a>
       );
@@ -86,14 +86,16 @@ const Forum = () => {
   };
 
   return (
-    <div className="container">
-      <div className="forum-header">
-        <h1>Foros de la comunidad</h1>
-        <p>Encuentra o inicia un debate sobre temas de interés en el mundo freelance.</p>
-        <button className="create-button" onClick={() => setIsCreateModalOpen(true)}>Crear nuevo tema</button>
+    <div className="container mx-auto p-4 md:p-8 bg-white min-h-screen">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 border-b pb-4">
+        <div className="mb-4 md:mb-0">
+          <h1 className="text-3xl font-bold text-gray-800">Foros de la comunidad</h1>
+          <p className="text-gray-600 mt-1">Encuentra o inicia un debate sobre temas de interés en el mundo freelance.</p>
+        </div>
+        <button className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-blue-700 transition duration-200" onClick={() => setIsCreateModalOpen(true)}>Crear nuevo tema</button>
       </div>
       
-      <div className="forum-list">
+      <div className="space-y-4">
         {topicsToRender.map((topic, index) => (
           <ForumCard
             key={topic.title + index}
@@ -103,7 +105,7 @@ const Forum = () => {
         ))}
       </div>
 
-      <div className="pagination">
+      <div className="flex justify-center mt-8">
         {renderPaginationButtons()}
       </div>
 
