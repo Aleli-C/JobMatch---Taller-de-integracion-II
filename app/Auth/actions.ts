@@ -43,7 +43,7 @@ function resetEmailHtml(url: string) {
   </div>`;
 }
 
-async function sendResetEmail(to: string, url: string) {
+export async function SendResetEmail(to: string, url: string): Promise<void> {
   const transporter = getTransporter();
   const from = process.env.SMTP_FROM || "no-reply@localhost";
   const subject = "Recupera tu contraseña";
@@ -87,11 +87,9 @@ export async function requestPasswordResetAction(
 
   const url = `${appUrl()}/auth/reset?token=${rawToken}`;
   try {
-    await sendResetEmail(user.email, url);
+    await SendResetEmail(user.email, url);
   } catch (err) {
-    // Opcional: registra en tu observabilidad (Sentry, etc.)
     console.error("Error enviando reset email:", err);
-    // Mantenemos respuesta neutra para no filtrar información
   }
 
   return { ok: true };
@@ -113,5 +111,5 @@ export async function requestPasswordReset(input: { email: string }): Promise<vo
   });
 
   const url = `${appUrl()}/auth/reset?token=${rawToken}`;
-  await sendResetEmail(user.email, url);
+  await SendResetEmail(user.email, url);
 }
