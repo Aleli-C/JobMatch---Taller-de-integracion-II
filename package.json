@@ -26,6 +26,7 @@
   "homepage": "https://github.com/Aleli-C/JobMatch---Taller-de-integracion-II#readme",
   "dependencies": {
     "next": "^15.5.2",
+    "next-themes": "^0.4.6",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "socket.io": "^4.8.1",
