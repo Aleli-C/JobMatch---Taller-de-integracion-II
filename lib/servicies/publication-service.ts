@@ -1,4 +1,4 @@
-// 📍 Archivo: lib/servicies/publication-service.ts (Versión Corregida)
+//lib/servicies/publication-service.ts (Versión Corregida)
 
 import { z } from 'zod';
 import { PublicationRepository } from '../repositories/publication-repository';
@@ -66,8 +66,10 @@ export class PublicationService {
   ): Promise<DeletePublicationResponse> {
     return this.safeExecute(async () => {
       const validatedData = deletePublicationSchema.parse(request);
+      // Solo el propietario puede eliminar su publicación
       const deleted = await this.repository.delete(validatedData);
       if (!deleted) {
+        //Mensaje de retroalimentación para el usuario
         return { success: false, error: 'No autorizado o publicación no encontrada' };
       }
       return { success: true };

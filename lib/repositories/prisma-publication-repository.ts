@@ -84,7 +84,7 @@ export class PrismaPublicationRepository implements PublicationRepository {
     const publication = await this.prisma.publicacion.findUnique({
       where: { idPublicacion: request.idPublicacion },
     });
-
+ // Validamos que la publicación exista y que pertenezca al usuario que intenta eliminarla
     if (!publication || publication.idUsuario !== request.idUsuario) {
       return false;
     }
@@ -95,10 +95,6 @@ export class PrismaPublicationRepository implements PublicationRepository {
 
     return true;
   }
-
-// 📍 Archivo: lib/repositories/prisma-publication-repository.ts
-
-// ... (otros imports y código de la clase)
 
   async list(params: {
     page?: number;
