@@ -1,3 +1,5 @@
+// lib/zod/publications.ts
+
 // Esquemas de validación Zod para el dominio de publicaciones
 import { z } from 'zod';
 import { PublicationType, PublicationStatus } from '../types/publication';
@@ -15,8 +17,9 @@ export const createPublicationSchema = z.object({
   remuneracion: z.number()
     .min(0, 'La remuneración no puede ser negativa')
     .max(99999999.99, 'Remuneración excede el límite máximo'),
+  // CORRECCIÓN: Se quita errorMap y se deja el objeto con el mensaje
   tipo: z.nativeEnum(PublicationType, {
-    errorMap: () => ({ message: 'Tipo de trabajo no válido' })
+    message: 'Tipo de trabajo no válido'
   }),
   fechaCierre: z.date()
     .refine(date => date > new Date(), {
@@ -32,11 +35,13 @@ export const listPublicationsSchema = z.object({
   limit: z.number().int().min(1, 'El límite debe ser mayor a 0').max(100, 'El límite no puede exceder 100').optional().default(10),
   filters: z.object({
     titulo: z.string().min(1, 'El título no puede estar vacío').optional(),
+    // CORRECCIÓN: Se quita errorMap
     tipo: z.nativeEnum(PublicationType, {
-      errorMap: () => ({ message: 'Tipo de trabajo no válido' })
+      message: 'Tipo de trabajo no válido'
     }).optional(),
+    // CORRECCIÓN: Se quita errorMap
     estado: z.nativeEnum(PublicationStatus, {
-      errorMap: () => ({ message: 'Estado no válido' })
+      message: 'Estado no válido'
     }).optional(),
     idCategoria: z.number().int().positive('ID de categoría debe ser positivo').optional(),
     idUbicacion: z.number().int().positive('ID de ubicación debe ser positivo').optional(),
@@ -64,11 +69,13 @@ export const listPublicationsSchema = z.object({
     message: 'La fecha desde no puede ser posterior a la fecha hasta'
   }),
   sort: z.object({
+    // CORRECCIÓN: Se quita errorMap
     field: z.enum(['fechaPublicacion', 'remuneracion', 'titulo'], {
-      errorMap: () => ({ message: 'Campo de ordenamiento no válido' })
+      message: 'Campo de ordenamiento no válido'
     }),
+    // CORRECIÓN: Se quita errorMap
     order: z.enum(['asc', 'desc'], {
-      errorMap: () => ({ message: 'Orden debe ser asc o desc' })
+      message: 'Orden debe ser asc o desc'
     })
   }).optional().default({ field: 'fechaPublicacion', order: 'desc' })
 });
