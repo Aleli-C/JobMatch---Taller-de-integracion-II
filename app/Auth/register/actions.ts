@@ -1,7 +1,7 @@
 "use server";
 
 import bcrypt from "bcryptjs";
-import { prisma } from "../../../prisma/prisma";
+import { prisma } from "../../../prisma/prisma.schema";
 import { registerSchema } from "../../../lib/zod/auth";
 import type { RegisterInput } from "../../../lib/zod/auth";
 

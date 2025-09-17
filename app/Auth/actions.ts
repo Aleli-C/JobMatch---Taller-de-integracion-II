@@ -77,9 +77,10 @@ export async function requestPasswordResetAction(
 
   await prisma.passwordResetToken.deleteMany({ where: { userId: user.id, usedAt: null } });
 
+  //Se crea un token seguro y se guarda su hash en la base de datos
   const rawToken = randomBytes(32).toString("hex");
-  const tokenHash = sha256Hex(rawToken);
-  const expiresAt = new Date(Date.now() + RESET_TTL_MIN * 60 * 1000);
+  const tokenHash = sha256Hex(rawToken); 
+  const expiresAt = new Date(Date.now() + RESET_TTL_MIN * 60 * 1000); // El token expira en 15 minutos, lo que mejora la seguridad
 
   await prisma.passwordResetToken.create({
     data: { userId: user.id, email: user.email, tokenHash, expiresAt },
@@ -100,6 +101,7 @@ export async function requestPasswordReset(input: { email: string }): Promise<vo
   const user = await prisma.user.findUnique({ where: { email: parsed.email }, select: { id: true, email: true } });
   if (!user) return;
 
+  // Invalidas los tokens anteriores no utilizados al solicitar uno nuevo (para evitar múltiples tokens válidos)
   await prisma.passwordResetToken.deleteMany({ where: { userId: user.id, usedAt: null } });
 
   const rawToken = randomBytes(32).toString("hex");
