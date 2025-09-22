@@ -4,9 +4,10 @@
 import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
 import { signJWT } from "@/lib/jwt";
-import { prisma } from "../../../prisma/prisma";
-import { loginSchema } from "../../../lib/zod/auth";
-import type { LoginInput } from "../../../lib/zod/auth";
+import { prisma } from "@/prisma/prisma";
+import { loginSchema } from "@/lib/zod/auth";
+import type { LoginInput } from "@/lib/zod/auth";
+import { sessionConfig } from "@/lib/session"; //  importamos la config centralizada
 
 export async function loginUser(formData: FormData) {
   // Convertir FormData en objeto plano
@@ -30,7 +31,7 @@ export async function loginUser(formData: FormData) {
       return { error: { correo: ["Correo no registrado"] } };
     }
 
-    // Compara de forma segura la contraseña que envía el usuario con el hash guardado en la base de datos. Esto evita exponer el hash.
+    // Comparar contraseña
     const isPasswordValid = await bcrypt.compare(
       loginData.contraseña,
       user.contraseña
@@ -43,7 +44,6 @@ export async function loginUser(formData: FormData) {
     // Si la contraseña es válida
     const { contraseña, ...userWithoutPassword } = user;
 
-    //Creación de Cookie: Se crea un token JWT que se guarda en una cookie 
     // Crear token JWT
     const token = signJWT({
       id: user.id_Usuario,
@@ -51,13 +51,8 @@ export async function loginUser(formData: FormData) {
       tipo: user.tipo_usuario,
     });
 
-    // Guardar en cookie httpOnly La cookie no puede ser leída por JavaScript en el navegador, lo que te protege de ataques.
-    cookies().set("session", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax", //protección contra ataques CSRF
-      path: "/",
-    });
+    // Guardar en cookie usando config centralizada
+    cookies().set(sessionConfig.name, token, sessionConfig.options);
 
     return { success: true, user: userWithoutPassword };
   } catch (err) {
@@ -65,3 +60,4 @@ export async function loginUser(formData: FormData) {
     return { error: { general: ["Error interno al iniciar sesión"] } };
   }
 }
+
