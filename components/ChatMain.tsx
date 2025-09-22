@@ -1,19 +1,28 @@
 'use client';
 
-import { useState } from 'react';
 
-const ChatMain = ({ activeChat, onSendMessage, onToggleInfoPanel }) => {
-  const [messageText, setMessageText] = useState('');
+import { useState } from "react";
+
+type Message = { text: string; senderId: string; time: string };
+type ChatUser = { name: string; about: string; contact: string; avatar: string };
+type Chat = { id: string; user: ChatUser; messages: Message[] };
+
+type Props = {
+  activeChat?: Chat | null;
+  onSendMessage: (text: string) => void;
+  onToggleInfoPanel: () => void;
+};
+
+const ChatMain = ({ activeChat, onSendMessage, onToggleInfoPanel }: Props) => {
+  const [messageText, setMessageText] = useState<string>("");
 
   const handleSend = () => {
     onSendMessage(messageText);
     setMessageText('');
   };
 
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      handleSend();
-    }
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") handleSend();
   };
 
   return (

@@ -1,49 +1,45 @@
 "use server";
 
 import bcrypt from "bcryptjs";
-import { prisma } from "../../../prisma/prisma.schema";
-import { registerSchema } from "../../../lib/zod/auth";
-import type { RegisterInput } from "../../../lib/zod/auth";
+import { prisma } from "../../../lib/prisma";
+import { registerSchema, type RegisterInput } from "../../../lib/zod/auth";
 
 export async function registerUser(formData: FormData) {
-  // Convertir FormData en objeto plano
-  const data = Object.fromEntries(formData.entries());
+  const raw = Object.fromEntries(formData.entries()) as Record<string, string>;
 
-  // Validar con Zod
-  const parsed = registerSchema.safeParse(data);
-  if (!parsed.success) {
-    return { error: parsed.error.flatten().fieldErrors };
-  }
+  // Normaliza claves con acento -> sin acento
+  if (raw["contraseña"] && !raw["contrasena"]) raw["contrasena"] = raw["contraseña"];
 
-  const userData: RegisterInput = parsed.data;
+  const parsed = registerSchema.safeParse(raw);
+  if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
-  // Hashear contraseña
-  const hashedPassword = await bcrypt.hash(userData.contraseña, 10);
+  const data: RegisterInput = parsed.data;
 
   try {
-    // Guardar en DB con Prisma
+    const hashed = await bcrypt.hash(data.contrasena, 10);
+
     const newUser = await prisma.usuario.create({
       data: {
-        rut: userData.rut,
-        nombre: userData.nombre,
-        correo: userData.correo,
-        contraseña: hashedPassword,
-        tipo_usuario: userData.tipo_usuario,
-        ubicacion: userData.ubicacion ?? null,
+        rut: data.rut,
+        nombre: data.nombre,
+        correo: data.correo,
+        contrasena: hashed,
+        tipoUsuario: data.tipo_usuario,        // map snake → camel
+        direccion: data.direccion ?? undefined,
       },
       select: {
-        id_Usuario: true,
+        id: true,
         rut: true,
         nombre: true,
         correo: true,
-        tipo_usuario: true,
-        ubicacion: true,
+        tipoUsuario: true,
+        direccion: true,
       },
     });
 
     return { success: true, user: newUser };
   } catch (err: any) {
-    if (err.code === "P2002") {
+    if (err?.code === "P2002" && err?.meta?.target?.includes("correo")) {
       return { error: { correo: ["Este correo ya está registrado"] } };
     }
     console.error(err);

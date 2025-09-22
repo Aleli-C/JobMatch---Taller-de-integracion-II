@@ -1,10 +1,20 @@
-import React from 'react';
+"use client";
 
-const ForumCard = ({ topic, onClick }) => {
+import React from "react";
+import type { Topic } from "../lib/types/forum";
+
+type Props = { topic: Topic; onClick: () => void };
+
+const ForumCard = ({ topic, onClick }: Props) => {
   return (
     <div
       className="bg-gray-50 p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200 cursor-pointer"
       onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") onClick();
+      }}
     >
       <div className="flex justify-between items-start">
         <h3 className="text-xl font-semibold text-gray-800 mb-1">{topic.title}</h3>
@@ -14,7 +24,9 @@ const ForumCard = ({ topic, onClick }) => {
       </div>
       <p className="text-gray-600 text-sm mt-2 line-clamp-2">{topic.content}</p>
       <div className="flex items-center text-xs text-gray-400 mt-4">
-        <span className="mr-4">Por: <span className="text-gray-500 font-medium">{topic.author}</span></span>
+        <span className="mr-4">
+          Por: <span className="text-gray-500 font-medium">{topic.author}</span>
+        </span>
         <span>{topic.time}</span>
       </div>
     </div>

@@ -1,10 +1,19 @@
-'use client';
+"use client";
+import { useState } from "react";
+import ChatItem from "./ChatItem";
 
-import { useState } from 'react';
-import ChatItem from './ChatItem';
+type Message = { text: string; senderId: string; time: string };
+type ChatUser = { name: string; about: string; contact: string; avatar: string };
+type Chat = { id: string; user: ChatUser; messages: Message[] };
 
-const ChatSidebar = ({ chats, activeChatId, onSelectChat }) => {
-  const [filter, setFilter] = useState('');
+type Props = {
+  chats: Chat[];
+  activeChatId: string | null;
+  onSelectChat: (id: string) => void;
+};
+
+const ChatSidebar = ({ chats, activeChatId, onSelectChat }: Props) => {
+  const [filter, setFilter] = useState<string>("");
 
   const filteredChats = chats.filter((chat) =>
     chat.user.name.toLowerCase().includes(filter.toLowerCase())

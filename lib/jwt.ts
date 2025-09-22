@@ -1,16 +1,21 @@
-//lib/jwt.ts
-import jwt from "jsonwebtoken";
+// /lib/jwt.ts
+import { SignJWT, jwtVerify, type JWTPayload } from "jose";
 
-const JWT_SECRET = process.env.JWT_SECRET || "super_secret_key";
+const secret = new TextEncoder().encode(
+  process.env.AUTH_SECRET ?? process.env.JWT_SECRET ?? "dev_secret_change_me"
+);
 
-export function signJWT(payload: object, expiresIn = "7d") {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn });
+// Firma genérica. Úsala en Server Actions, no en middleware.
+export async function signJWT(payload: JWTPayload, exp: string = "7d") {
+  return await new SignJWT(payload)
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime(exp)
+    .sign(secret);
 }
 
-export function verifyJWT<T>(token: string): T | null {
-  try {
-    return jwt.verify(token, JWT_SECRET) as T;
-  } catch {
-    return null;
-  }
+// Verificación Edge-safe. Úsala en middleware.
+export async function verifyJWT<T extends JWTPayload = JWTPayload>(token: string) {
+  const { payload } = await jwtVerify(token, secret);
+  return payload as T;
 }

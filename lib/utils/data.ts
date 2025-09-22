@@ -1,3 +1,13 @@
+export type Comment = { author: string; text: string; time: string };
+export type Topic = {
+  title: string;
+  author: string;
+  time: string;
+  replies: number;
+  content: string;
+  comments: Comment[];
+};
+
 export const sampleComments = [
     '¡Excelente pregunta! Creo que...',
     'Estoy de acuerdo. A mí me ha funcionado...',
@@ -13,27 +23,26 @@ export const sampleComments = [
     'Es importante considerar la experiencia y el tipo de proyecto.'
 ];
 
-export const sampleAuthors = [
-    'Juan G.', 'Sofía R.', 'Carlos V.', 'Ana P.', 'Pedro A.', 'Martín T.', 'Laura D.', 'Daniela G.'
+export const sampleAuthors: string[] = [
+  "Juan G.", "Sofía R.", "Carlos V.", "Ana P.", "Pedro A.", "Martín T.", "Laura D.", "Daniela G."
 ];
 
-export function getRandomInt(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
+export function getRandomInt(min: number, max: number): number {
+  const lo = Math.ceil(min);
+  const hi = Math.floor(max);
+  return Math.floor(Math.random() * (hi - lo + 1)) + lo;
 }
 
-export function generateRandomComments(count) {
-    const comments = [];
-    for (let i = 0; i < count; i++) {
-        const randomAuthor = sampleAuthors[getRandomInt(0, sampleAuthors.length - 1)];
-        const randomText = sampleComments[getRandomInt(0, sampleComments.length - 1)];
-        const timeAgo = Math.floor(Math.random() * 60) + 1;
-        comments.push({
-            author: randomAuthor,
-            text: randomText,
-            time: `Hace ${timeAgo} minutos`
-        });
-    }
-    return comments;
+export function generateRandomComments(count: number): Comment[] {
+  const n = Math.max(0, Math.floor(count));
+  const comments: Comment[] = [];
+  for (let i = 0; i < n; i++) {
+    const author = sampleAuthors[getRandomInt(0, sampleAuthors.length - 1)];
+    const text = sampleComments[getRandomInt(0, sampleComments.length - 1)];
+    const timeAgo = getRandomInt(1, 60);
+    comments.push({ author, text, time: `Hace ${timeAgo} minutos` });
+  }
+  return comments;
 }
 
 export let forumTopics = [

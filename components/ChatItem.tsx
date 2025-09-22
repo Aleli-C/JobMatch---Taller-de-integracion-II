@@ -1,6 +1,12 @@
 import React from 'react';
 
-const ChatItem = ({ chat, isActive, onClick }) => {
+type Message = { text: string; senderId: string; time: string };
+type ChatUser = { name: string; about: string; contact: string; avatar: string };
+type Chat = { id: string; user: ChatUser; messages: Message[] };
+
+type Props = { chat: Chat; isActive: boolean; onClick: () => void };
+
+const ChatItem = ({ chat, isActive, onClick }: Props) => {
   const lastMessage = chat.messages[chat.messages.length - 1];
 
   return (

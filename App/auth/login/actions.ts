@@ -1,47 +1,25 @@
+// app/auth/login/actions.ts
 "use server";
 
 import bcrypt from "bcryptjs";
-import { prisma } from "../../../prisma/prisma";
+import { prisma } from "../../../lib/prisma";
 import { loginSchema } from "../../../lib/zod/auth";
-import type { LoginInput } from "../../../lib/zod/auth";
+import { createSession } from "../../../lib/session";
+import { redirect } from "next/navigation";
 
-export async function loginUser(formData: FormData) {
-  // Convertir FormData en objeto plano
-  const data = Object.fromEntries(formData.entries());
+export type LoginActionResult = { error: Record<string, string[]> } | void;
 
-  // Validar con Zod
-  const parsed = loginSchema.safeParse(data);
-  if (!parsed.success) {
-    return { error: parsed.error.flatten().fieldErrors };
-  }
+export async function loginUser(formData: FormData): Promise<LoginActionResult> {
+  const parsed = loginSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
-  const loginData: LoginInput = parsed.data;
+  const { correo, contrasena } = parsed.data;
+  const user = await prisma.usuario.findUnique({ where: { correo } });
+  if (!user) return { error: { correo: ["Correo no registrado"] } };
 
-  try {
-    // Buscar usuario por correo
-    const user = await prisma.usuario.findUnique({
-      where: { correo: loginData.correo },
-    });
+  const ok = await bcrypt.compare(contrasena, user.contrasena);
+  if (!ok) return { error: { contraseña: ["Contraseña incorrecta"] } };
 
-    if (!user) {
-      return { error: { correo: ["Correo no registrado"] } };
-    }
-
-    // Comparar contraseña
-    const isPasswordValid = await bcrypt.compare(
-      loginData.contraseña,
-      user.contraseña
-    );
-
-    if (!isPasswordValid) {
-      return { error: { contraseña: ["Contraseña incorrecta"] } };
-    }
-
-    // Retornar usuario (sin contraseña)
-    const { contraseña, ...userWithoutPassword } = user;
-    return { success: true, user: userWithoutPassword };
-  } catch (err) {
-    console.error(err);
-    return { error: { general: ["Error interno al iniciar sesión"] } };
-  }
+  await createSession({ sub: user.id, correo: user.correo, role: user.tipoUsuario });
+  redirect("/"); // no retorna
 }

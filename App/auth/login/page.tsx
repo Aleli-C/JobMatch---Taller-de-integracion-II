@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { z } from "zod";
-import Button from "../../components/button";
+import Button from "../../../components/button";
 
 // Schema de validación con Zod
 const loginSchema = z.object({

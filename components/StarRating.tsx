@@ -1,15 +1,14 @@
-import React from 'react';
+"use client";
 
-const StarRating = ({ rating }) => {
-  const stars = [];
+import React from "react";
+
+type Props = { rating: number };
+
+const StarRating = ({ rating }: Props) => {
+  const stars: React.ReactNode[] = [];
   for (let i = 1; i <= 5; i++) {
     stars.push(
-      <span
-        key={i}
-        className={`text-2xl ${
-          i <= rating ? 'text-yellow-400' : 'text-gray-300'
-        }`}
-      >
+      <span key={i} className={`text-2xl ${i <= rating ? "text-yellow-400" : "text-gray-300"}`}>
         ★
       </span>
     );

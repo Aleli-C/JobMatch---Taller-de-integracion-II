@@ -8,9 +8,13 @@
   },
   "scripts": {
     "dev": "next dev",
+    "prebuild": "prisma generate",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "postinstall": "prisma generate",
+    "db:deploy": "prisma migrate deploy",
+    "db:studio": "prisma studio",
+    "typecheck": "tsc --noEmit"
   },
   "repository": {
     "type": "git",
@@ -25,8 +29,13 @@
   },
   "homepage": "https://github.com/Aleli-C/JobMatch---Taller-de-integracion-II#readme",
   "dependencies": {
+    "@prisma/client": "^6.16.2",
+    "bcryptjs": "^3.0.2",
+    "jose": "^6.1.0",
+    "lucide-react": "^0.544.0",
     "next": "^15.5.2",
     "next-themes": "^0.4.6",
+    "nodemailer": "^7.0.6",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "socket.io": "^4.8.1",
@@ -35,9 +44,12 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.12",
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "24.3.0",
+    "@types/nodemailer": "^7.0.1",
     "@types/react": "19.1.12",
     "postcss": "^8.5.6",
+    "prisma": "^6.16.2",
     "tailwindcss": "^4.1.12",
     "typescript": "5.9.2"
   }

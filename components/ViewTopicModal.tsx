@@ -1,12 +1,23 @@
-import React, { useState } from 'react';
+"use client";
 
-const ViewTopicModal = ({ isOpen, onClose, topic, onPostReply }) => {
-  const [replyText, setReplyText] = useState('');
+import React, { useState } from "react";
+import type { Topic } from "../lib/utils/data";
 
-  const handlePost = (e) => {
+type Props = {
+  isOpen: boolean;
+  onClose: () => void;
+  topic: Topic | null | undefined;
+  onPostReply: (text: string) => void;
+};
+
+const ViewTopicModal = ({ isOpen, onClose, topic, onPostReply }: Props) => {
+  const [replyText, setReplyText] = useState<string>("");
+
+  const handlePost = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!replyText.trim()) return;
     onPostReply(replyText);
-    setReplyText('');
+    setReplyText("");
   };
 
   if (!isOpen || !topic) return null;
@@ -18,6 +29,7 @@ const ViewTopicModal = ({ isOpen, onClose, topic, onPostReply }) => {
           <button
             className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 text-3xl leading-none"
             onClick={onClose}
+            type="button"
           >
             &times;
           </button>
@@ -29,7 +41,9 @@ const ViewTopicModal = ({ isOpen, onClose, topic, onPostReply }) => {
 
         <div className="flex-grow overflow-y-auto p-6 space-y-6">
           <p className="text-gray-700 leading-relaxed bg-gray-50 p-4 rounded-lg">{topic.content}</p>
-          <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Respuestas ({topic.replies})</h3>
+          <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">
+            Respuestas ({topic.replies})
+          </h3>
           <div className="space-y-4">
             {topic.comments?.map((comment, index) => (
               <div key={index} className="bg-gray-100 p-4 rounded-lg">
@@ -49,7 +63,7 @@ const ViewTopicModal = ({ isOpen, onClose, topic, onPostReply }) => {
               type="text"
               placeholder="Escribe tu respuesta..."
               value={replyText}
-              onChange={(e) => setReplyText(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setReplyText(e.target.value)}
               className="flex-grow p-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <button

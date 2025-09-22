@@ -1,10 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import ChatSidebar from '@/components/components/chats/ChatSidebar';
-import ChatMain from '@/components/components/chats/ChatMain';
-import ChatInfoPanel from '@/components/components/chats/ChatInfoPanel';
-import Header from '@/components/components/Header'; // Importamos el componente Header
+import ChatSidebar from '../../components/ChatSideBar';
+import ChatMain from '../../components/ChatMain';
+import ChatInfoPanel from '../../components/ChatInfoPanel';
+import Header from '../../components/header'; // Importamos el componente Header
+
+type Message = { text: string; senderId: string; time: string };
+type ChatUser = { name: string; about: string; contact: string; avatar: string };
+type Chat = { id: string; user: ChatUser; messages: Message[] };
 
 const initialChats = [
   {
@@ -52,57 +56,40 @@ const initialChats = [
 ];
 
 export default function ChatPage() {
-  const [chats, setChats] = useState(initialChats);
-  const [activeChatId, setActiveChatId] = useState(null);
-  const [isInfoPanelVisible, setIsInfoPanelVisible] = useState(false);
+  const [chats, setChats] = useState<Chat[]>(initialChats);
+  const [activeChatId, setActiveChatId] = useState<string | null>(null);
+  const [isInfoPanelVisible, setIsInfoPanelVisible] = useState<boolean>(false);
 
-  const activeChat = chats.find((chat) => chat.id === activeChatId);
+  const activeChat: Chat | null = chats.find((c) => c.id === activeChatId) ?? null;
 
-  const handleSendMessage = (text) => {
+  const handleSendMessage = (text: string): void => {
     if (!activeChat) return;
-
     const now = new Date();
-    const time = `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
-    const newMessage = { text, senderId: 'me', time };
-
-    setChats((prevChats) =>
-      prevChats.map((chat) =>
-        chat.id === activeChatId
-          ? { ...chat, messages: [...chat.messages, newMessage] }
-          : chat
+    const time = `${now.getHours()}:${now.getMinutes().toString().padStart(2, "0")}`;
+    const newMessage: Message = { text, senderId: "me", time };
+    setChats((prev) =>
+      prev.map((chat) =>
+        chat.id === activeChatId ? { ...chat, messages: [...chat.messages, newMessage] } : chat
       )
     );
   };
 
-  const handleSelectChat = (id) => {
+  const handleSelectChat = (id: string): void => {
     setActiveChatId(id);
     setIsInfoPanelVisible(false);
   };
 
-  const handleToggleInfoPanel = () => {
-    setIsInfoPanelVisible(!isInfoPanelVisible);
+  const handleToggleInfoPanel = (): void => {
+    setIsInfoPanelVisible((v) => !v);
   };
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
-      {/* Añadimos el componente Header aquí */}
       <Header />
       <div className="flex w-full flex-grow bg-gray-100">
-        <ChatSidebar
-          chats={chats}
-          activeChatId={activeChatId}
-          onSelectChat={handleSelectChat}
-        />
-        <ChatMain
-          activeChat={activeChat}
-          onSendMessage={handleSendMessage}
-          onToggleInfoPanel={handleToggleInfoPanel}
-        />
-        <ChatInfoPanel
-          user={activeChat?.user}
-          isVisible={isInfoPanelVisible}
-          onClose={handleToggleInfoPanel}
-        />
+        <ChatSidebar chats={chats} activeChatId={activeChatId} onSelectChat={handleSelectChat} />
+        <ChatMain activeChat={activeChat} onSendMessage={handleSendMessage} onToggleInfoPanel={handleToggleInfoPanel} />
+        <ChatInfoPanel user={activeChat?.user} isVisible={isInfoPanelVisible} onClose={handleToggleInfoPanel} />
       </div>
     </div>
   );

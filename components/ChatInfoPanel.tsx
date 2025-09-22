@@ -1,6 +1,19 @@
 import React from 'react';
 
-const ChatInfoPanel = ({ user, isVisible, onClose }) => {
+type ChatUser = {
+  name: string;
+  about: string;
+  contact: string;
+  avatar: string;
+};
+
+type Props = {
+  user?: ChatUser | null;
+  isVisible: boolean;
+  onClose: () => void;
+};
+
+const ChatInfoPanel = ({ user, isVisible, onClose }: Props) => {
   if (!user) return null;
 
   return (

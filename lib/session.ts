@@ -1,23 +1,46 @@
 // lib/session.ts
 import { cookies } from "next/headers";
-import { verifyJWT } from "./jwt";
+import { signJWT, verifyJWT } from "./jwt";
+import type { JWTPayload } from "jose";
 
-// Configuración de la cookie
-export const sessionConfig = {
-  name: "session", // nombre de la cookie
-  options: {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production", // solo HTTPS en prod
-    sameSite: "lax", // protege contra CSRF
-    path: "/", // accesible en toda la app
-    maxAge: 60 * 60 * 24 * 7, // 7 días
-  } as const,
+export type SessionClaims = JWTPayload & {
+  sub: string;                   // <- string por RFC 7519
+  correo: string;
+  role?: "EMPLEADOR" | "EMPLEADO";
 };
 
-// Función genérica para obtener la sesión desde la cookie
-export async function getSession<T>(cookieName: string): Promise<T | null> {
-  const token = cookies().get(cookieName)?.value;
-  if (!token) return null;
+export type SessionInput = {     // lo que pasa tu app
+  sub: number;                   // id numérico
+  correo: string;
+  role?: "EMPLEADOR" | "EMPLEADO";
+};
 
-  return verifyJWT<T>(token);
+export const sessionConfig = {
+  name: "session",
+  options: {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax" as const,
+    path: "/",
+    maxAge: 60 * 60 * 24 * 7,
+  },
+} as const;
+
+export async function createSession(s: SessionInput) {
+  const payload: SessionClaims = { sub: String(s.sub), correo: s.correo, role: s.role };
+  const token = await signJWT(payload, "7d");
+  const store = await cookies();                 // Next 15: async
+  store.set(sessionConfig.name, token, sessionConfig.options);
+}
+
+export async function getSession<T extends JWTPayload = SessionClaims>(): Promise<T | null> {
+  const store = await cookies();                 // Next 15: async
+  const token = store.get(sessionConfig.name)?.value;
+  if (!token) return null;
+  return (await verifyJWT<T>(token));
+}
+
+export async function destroySession() {
+  const store = await cookies();                 // Next 15: async
+  store.set(sessionConfig.name, "", { ...sessionConfig.options, maxAge: 0 });
 }

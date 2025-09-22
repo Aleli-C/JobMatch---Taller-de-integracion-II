@@ -1,7 +1,8 @@
-import React, { createContext, useContext } from 'react';
-import type { ReactNode } from 'react';
-import { useToast, ToastContainer } from './Toast';
-import type { AddToastPayload } from './Toast';
+"use client";
+import React, { createContext, useContext } from "react";
+import type { ReactNode } from "react";
+import { useToast, ToastContainer } from "./Toast";
+import type { AddToastPayload } from "./Toast";
 
 // Tipos del contexto
 interface ToastContextType {

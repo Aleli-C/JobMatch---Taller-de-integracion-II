@@ -21,19 +21,17 @@ export const registerSchema = z
     contrasena: z.string().min(6, "La contraseña debe tener mínimo 6 caracteres"),
     confirmarContrasena: z.string(),
     tipo_usuario: z.enum(["EMPLEADOR", "EMPLEADO"]),
-    ubicacion: z.date().optional(),
+    direccion: z.string().optional().nullable(),
   })
   .refine((data) => data.contrasena === data.confirmarContrasena, {
     message: "Las contraseñas no coinciden",
     path: ["confirmarContrasena"],
   });
 
-// ✅ INICIO DE LA CORRECCIÓN
 // Solicitud de reseteo de contraseña → usa solo correo
 export const requestResetSchema = z.object({
   correo: z.string().email("Debe ser un correo válido"),
 });
-// ✅ FIN DE LA CORRECCIÓN
 
 // Reset con token
 export const resetPasswordSchema = z
@@ -46,7 +44,6 @@ export const resetPasswordSchema = z
     message: "Las contraseñas no coinciden",
     path: ["confirmarContrasena"],
   });
-
 // ---- Tipos inferidos ----
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;

@@ -1,41 +1,37 @@
-import { PrismaClient, TipoEnum, EstadoEnum } from '@prisma/client';
-import { PublicationRepository } from './publication-repository';
-import { 
-  Publication, 
-  CreatePublicationRequest, 
-  DeletePublicationRequest, 
-  PublicationType, 
-  PublicationStatus 
-} from '../types/publication';
+import { PrismaClient, Prisma, TipoTrabajo, EstadoPublicacion } from "@prisma/client";
+import { PublicationRepository } from "./publication-repository";
+import {
+  Publication,
+  CreatePublicationRequest,
+  DeletePublicationRequest,
+  PublicationType,
+  PublicationStatus,
+} from "../types/publication";
 
-// 🔹 Helpers para mapear enums
-function mapTypeToPrisma(type: PublicationType): TipoEnum {
-  switch (type) {
-    case PublicationType.FULLTIME: return TipoEnum.FULLTIME;
-    case PublicationType.PARTTIME: return TipoEnum.PARTTIME;
-  }
-}
+// helpers enum
+const mapTypeToPrisma = (t: PublicationType): TipoTrabajo =>
+  t === PublicationType.FULLTIME ? TipoTrabajo.FULLTIME
+  : t === PublicationType.PARTTIME ? TipoTrabajo.PARTTIME
+  : TipoTrabajo.FREELANCE;
 
-function mapStatusToPrisma(status: PublicationStatus): EstadoEnum {
-  switch (status) {
-    case PublicationStatus.ACTIVO: return EstadoEnum.ACTIVO;
-    case PublicationStatus.INACTIVO: return EstadoEnum.INACTIVO;
-  }
-}
+const mapStatusToPrisma = (s: PublicationStatus): EstadoPublicacion =>
+  s === PublicationStatus.ACTIVO ? EstadoPublicacion.ACTIVO
+  : s === PublicationStatus.INACTIVO ? EstadoPublicacion.INACTIVO
+  : EstadoPublicacion.CERRADO;
 
-function mapTypeFromPrisma(type: TipoEnum): PublicationType {
-  switch (type) {
-    case TipoEnum.FULLTIME: return PublicationType.FULLTIME;
-    case TipoEnum.PARTTIME: return PublicationType.PARTTIME;
-  }
-}
+const mapTypeFromPrisma = (t: TipoTrabajo): PublicationType =>
+  t === TipoTrabajo.FULLTIME ? PublicationType.FULLTIME
+  : t === TipoTrabajo.PARTTIME ? PublicationType.PARTTIME
+  : PublicationType.FREELANCE;
 
-function mapStatusFromPrisma(status: EstadoEnum): PublicationStatus {
-  switch (status) {
-    case EstadoEnum.ACTIVO: return PublicationStatus.ACTIVO;
-    case EstadoEnum.INACTIVO: return PublicationStatus.INACTIVO;
-  }
-}
+const mapStatusFromPrisma = (s: EstadoPublicacion): PublicationStatus =>
+  s === EstadoPublicacion.ACTIVO ? PublicationStatus.ACTIVO
+  : s === EstadoPublicacion.INACTIVO ? PublicationStatus.INACTIVO
+  : PublicationStatus.CERRADO;
+
+// convertir Decimal -> number para tu capa de dominio
+const toNumber = (v: Prisma.Decimal | number): number =>
+  typeof v === "number" ? v : (v as unknown as Prisma.Decimal).toNumber();
 
 export class PrismaPublicationRepository implements PublicationRepository {
   constructor(private prisma: PrismaClient) {}
@@ -43,62 +39,52 @@ export class PrismaPublicationRepository implements PublicationRepository {
   async create(data: CreatePublicationRequest): Promise<Publication> {
     const p = await this.prisma.publicacion.create({
       data: {
-        idUsuario: data.idUsuario,
+        usuarioId: data.idUsuario,
         titulo: data.titulo,
         descripcion: data.descripcion,
-        remuneracion: data.remuneracion,
+        remuneracion: new Prisma.Decimal(data.remuneracion), // guardar como Decimal
         tipo: mapTypeToPrisma(data.tipo),
-        estado: EstadoEnum.ACTIVO,   // 🔹 se fija por defecto
-        fecha_cierre: data.fechaCierre,
-        idUbicacion: data.idUbicacion,
-        idCategoria: data.idCategoria,
-        fecha_publicacion: new Date(),
+        estado: EstadoPublicacion.ACTIVO,
+        fechaCierre: data.fechaCierre ?? null,
+        ubicacionId: data.idUbicacion,
+        categoriaId: data.idCategoria,
+        // fechaPublicacion se autogenera
       },
     });
 
     return {
-      idPublicacion: p.idPublicacion,
-      idUsuario: p.idUsuario,
+      idPublicacion: p.id,
+      idUsuario: p.usuarioId,
       titulo: p.titulo,
       descripcion: p.descripcion,
-      remuneracion: p.remuneracion,
+      remuneracion: toNumber(p.remuneracion), // ← evita el error de tipo
       tipo: mapTypeFromPrisma(p.tipo),
       estado: mapStatusFromPrisma(p.estado),
-      idUbicacion: p.idUbicacion,
-      idCategoria: p.idCategoria,
-      fechaPublicacion: p.fecha_publicacion,
-      fechaCierre: p.fecha_cierre ?? undefined,
+      idUbicacion: p.ubicacionId,
+      idCategoria: p.categoriaId,
+      fechaPublicacion: p.fechaPublicacion,
+      fechaCierre: p.fechaCierre ?? undefined,
     };
   }
 
-
   async validateRelatedEntities(idUbicacion: number, idCategoria: number): Promise<boolean> {
     const [ubicacion, categoria] = await Promise.all([
-      this.prisma.ubicacion.findUnique({ where: { idUbicacion } }),
-      this.prisma.categoria.findUnique({ where: { idCategoria } }),
+      this.prisma.ubicacion.findUnique({ where: { id: idUbicacion } }),
+      this.prisma.categoria.findUnique({ where: { id: idCategoria } }),
     ]);
-    return !!(ubicacion && categoria);
+    return Boolean(ubicacion && categoria);
   }
 
-  async delete(request: DeletePublicationRequest): Promise<boolean> {
-    const publication = await this.prisma.publicacion.findUnique({
-      where: { idPublicacion: request.idPublicacion },
+  async delete(req: DeletePublicationRequest): Promise<boolean> {
+    const pub = await this.prisma.publicacion.findUnique({
+      where: { id: req.idPublicacion },
+      select: { id: true, usuarioId: true },
     });
+    if (!pub || pub.usuarioId !== req.idUsuario) return false;
 
-    if (!publication || publication.idUsuario !== request.idUsuario) {
-      return false;
-    }
-
-    await this.prisma.publicacion.delete({
-      where: { idPublicacion: request.idPublicacion },
-    });
-
+    await this.prisma.publicacion.delete({ where: { id: req.idPublicacion } });
     return true;
   }
-
-// 📍 Archivo: lib/repositories/prisma-publication-repository.ts
-
-// ... (otros imports y código de la clase)
 
   async list(params: {
     page?: number;
@@ -110,58 +96,49 @@ export class PrismaPublicationRepository implements PublicationRepository {
       idCategoria?: number;
       idUbicacion?: number;
     };
-    sort?: { field: string; order: 'asc' | 'desc' };
+    sort?: { field: "fechaPublicacion" | "remuneracion" | "titulo"; order: "asc" | "desc" };
   }): Promise<{ publications: Publication[]; total: number }> {
     const {
       page = 1,
       limit = 10,
       filters = {},
-      // El sort que llega aquí viene en camelCase desde el servicio
-      sort = { field: 'fechaPublicacion', order: 'desc' },
+      sort = { field: "fechaPublicacion", order: "desc" },
     } = params;
 
     const skip = (page - 1) * limit;
 
-    const whereClause: Record<string, any> = {};
-    if (filters.titulo) whereClause.titulo = { contains: filters.titulo, mode: 'insensitive' };
-    if (filters.idCategoria) whereClause.idCategoria = filters.idCategoria;
-    if (filters.estado) whereClause.estado = mapStatusToPrisma(filters.estado);
-    if (filters.tipo) whereClause.tipo = mapTypeToPrisma(filters.tipo);
-
-
-    // Mapa para traducir campos de ordenamiento de camelCase a snake_case
-    const sortFieldMap: Record<string, string> = {
-      fechaPublicacion: 'fecha_publicacion',
-      remuneracion: 'remuneracion',
-      titulo: 'titulo',
+    const where: Prisma.PublicacionWhereInput = {
+      titulo: filters.titulo ? { contains: filters.titulo } : undefined,
+      categoriaId: filters.idCategoria,
+      ubicacionId: filters.idUbicacion,
+      estado: filters.estado ? mapStatusToPrisma(filters.estado) : undefined,
+      tipo: filters.tipo ? mapTypeToPrisma(filters.tipo) : undefined,
     };
-    
-    // Obtenemos el nombre real de la columna para la base de datos
-    const orderByField = sortFieldMap[sort.field] || 'fecha_publicacion';
 
-    const [publicationsRaw, total] = await this.prisma.$transaction([
-      this.prisma.publicacion.findMany({
-        skip,
-        take: limit,
-        where: whereClause,
-        // Usamos el nombre del campo ya traducido
-        orderBy: { [orderByField]: sort.order },
-      }),
-      this.prisma.publicacion.count({ where: whereClause }),
+    let orderBy: Prisma.PublicacionOrderByWithRelationInput;
+    switch (sort.field) {
+      case "remuneracion": orderBy = { remuneracion: sort.order }; break;
+      case "titulo": orderBy = { titulo: sort.order }; break;
+      default: orderBy = { fechaPublicacion: sort.order }; break;
+    }
+
+    const [rows, total] = await this.prisma.$transaction([
+      this.prisma.publicacion.findMany({ skip, take: limit, where, orderBy }),
+      this.prisma.publicacion.count({ where }),
     ]);
 
-    const publications: Publication[] = publicationsRaw.map((p) => ({
-      idPublicacion: p.idPublicacion,
-      idUsuario: p.idUsuario,
+    const publications: Publication[] = rows.map((p) => ({
+      idPublicacion: p.id,
+      idUsuario: p.usuarioId,
       titulo: p.titulo,
       descripcion: p.descripcion,
-      remuneracion: p.remuneracion,
+      remuneracion: toNumber(p.remuneracion), // ← corrige el array mapeado
       tipo: mapTypeFromPrisma(p.tipo),
       estado: mapStatusFromPrisma(p.estado),
-      idUbicacion: p.idUbicacion,
-      idCategoria: p.idCategoria,
-      fechaPublicacion: p.fecha_publicacion,
-      fechaCierre: p.fecha_cierre ?? undefined,
+      idUbicacion: p.ubicacionId,
+      idCategoria: p.categoriaId,
+      fechaPublicacion: p.fechaPublicacion,
+      fechaCierre: p.fechaCierre ?? undefined,
     }));
 
     return { publications, total };

@@ -1,22 +1,28 @@
 import React, { useState } from 'react';
+import type { Topic } from "../lib/types/forum";
 
-const CreateTopicModal = ({ isOpen, onClose, onCreate }) => {
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
+type Props = {
+  isOpen: boolean;
+  onClose: () => void;
+  onCreate: (topic: Topic) => void; // <- unificado
+};
 
-  const handleSubmit = (e) => {
+const CreateTopicModal = ({ isOpen, onClose, onCreate }: Props) => {
+  const [title, setTitle] = useState<string>("");
+  const [content, setContent] = useState<string>("");
+   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (title.trim() && content.trim()) {
       onCreate({
         title,
         content,
-        author: 'Usuario Actual',
-        time: 'Recién Publicado',
+        author: "Usuario Actual",
+        time: "Recién Publicado",
         replies: 0,
         comments: [],
       });
-      setTitle('');
-      setContent('');
+      setTitle("");
+      setContent("");
     }
   };
 

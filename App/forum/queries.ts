@@ -1,68 +1,79 @@
-export type ThreadListItem = {
-  id: string;
-  title: string;
-  createdAt: Date;
-  tags: string[];
-  categoryId: string | null;
-  userId: string;
+// lib/forum/queries.ts
+import { prisma } from "@/lib/prisma";
+import { revalidatePath } from "next/cache";
+import { z } from "zod";
+
+// ===== Types =====
+export type ForoListItem = {
+  id: number;
+  titulo: string;
+  fecha: Date;
+  usuarioId: number;
 };
 
-export async function getThreads(input: ForumThreadListInput = {}) {
-  const { take, cursor, q, categoryId, tags, order } = forumThreadListSchema.parse(input);
+// ===== Input schema (paginación + búsqueda) =====
+export const foroListSchema = z.object({
+  take: z.coerce.number().int().min(1).max(50).default(20),
+  cursor: z.coerce.number().int().optional(),
+  q: z.string().trim().min(1).optional(),
+  usuarioId: z.coerce.number().int().optional(),
+  order: z.enum(["newest","oldest"]).default("newest"),
+});
+
+export type ForoListInput = z.input<typeof foroListSchema>;
+// ===== Listado con cursor =====
+export async function getForos(input: ForoListInput = {}) {
+  const { take, cursor, q, usuarioId, order } = foroListSchema.parse(input);
 
   const where = {
     AND: [
-      categoryId ? { categoryId } : {},
+      usuarioId ? { usuarioId } : {},
       q
         ? {
             OR: [
-              { title: { contains: q, mode: "insensitive" } },
-              { body: { contains: q, mode: "insensitive" } },
+              { titulo: { contains: q, mode: "insensitive" } },
+              { consulta: { contains: q, mode: "insensitive" } },
             ],
           }
         : {},
-      tags && tags.length
-        ? { tags: { hasSome: tags } } // Postgres (String[])
-        : {},
-      // MySQL(JSON): usa { tags: { array_contains: tags } } si definiste JSON
     ],
   };
 
-  const items = await prisma.thread.findMany({
+  const items = await prisma.foro.findMany({
     where,
-    take: take + 1, // para calcular nextCursor
+    take: take + 1, // +1 para detectar si hay siguiente página
     ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-    orderBy: [{ createdAt: order === "newest" ? "desc" : "asc" }, { id: "desc" }],
-    select: { id: true, title: true, createdAt: true, tags: true, categoryId: true, userId: true },
+    orderBy: [{ fecha: order === "newest" ? "desc" : "asc" }, { id: "desc" }],
+    select: { id: true, titulo: true, fecha: true, usuarioId: true },
   });
 
   const hasMore = items.length > take;
   const sliced = hasMore ? items.slice(0, take) : items;
   const nextCursor = hasMore ? sliced[sliced.length - 1]?.id : undefined;
 
-  return { items: sliced as ThreadListItem[], nextCursor };
+  return { items: sliced as ForoListItem[], nextCursor };
 }
 
-export async function getThreadById(id: string) {
-  const thread = await prisma.thread.findUnique({
+// ===== Detalle por id =====
+export async function getForoById(id: number) {
+  const foro = await prisma.foro.findUnique({
     where: { id },
-    // agrega relaciones si existen (author, replies, etc.)
     select: {
       id: true,
-      title: true,
-      body: true,
-      tags: true,
-      categoryId: true,
-      userId: true,
-      createdAt: true,
-      updatedAt: true,
+      titulo: true,
+      consulta: true,
+      fecha: true,
+      usuarioId: true,
+      // Relaciones opcionales:
+      // usuario: { select: { id: true, nombre: true } },
+      // respuestas: { select: { id: true, respuesta: true, fecha: true, usuarioId: true } },
     },
   });
-  if (!thread) throw new Error("Foro no encontrado");
-  return thread;
+  if (!foro) throw new Error("Foro no encontrado");
+  return foro;
 }
 
-// opcional: revalidar listados si cambias filtros/server state desde acciones
+// ===== Revalidación UI =====
 export async function revalidateForumList() {
   revalidatePath("/forum");
 }

@@ -11,7 +11,7 @@ type SessionPayload = {
 };
 
 export async function getSessionUser() {
-  const token = cookies().get("session")?.value;
+  const token = (await cookies()).get("session")?.value;
   if (!token) return null;
 
   const user = verifyJWT<SessionPayload>(token);

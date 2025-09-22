@@ -1,9 +1,9 @@
 "use server";
-
-import { prisma } from "@/lib/prisma";
+export const runtime = "nodejs";
+import { prisma } from "../../lib/prisma";
 import { z } from "zod";
 import { randomBytes, createHash } from "crypto";
-import nodemailer from "nodemailer";
+import nodemailer, { type Transporter } from "nodemailer";
 
 const requestResetSchema = z.object({
   email: z.string().trim().toLowerCase().email(),
@@ -20,16 +20,20 @@ function appUrl() {
 }
 
 // ---------- SMTP (singleton) ----------
-let _transporter: nodemailer.Transporter | null = null;
-function getTransporter() {
-  if (_transporter) return _transporter;
+declare global {
+  // eslint-disable-next-line no-var
+  var __mailer: Transporter | undefined;
+}
+
+function getTransporter(): Transporter {
+  if (global.__mailer) return global.__mailer;
   const host = process.env.SMTP_HOST!;
   const port = Number(process.env.SMTP_PORT || 587);
   const secure = String(process.env.SMTP_SECURE || "").toLowerCase() === "true" || port === 465;
   const user = process.env.SMTP_USER!;
   const pass = process.env.SMTP_PASS!;
-  _transporter = nodemailer.createTransport({ host, port, secure, auth: { user, pass } });
-  return _transporter;
+  global.__mailer = nodemailer.createTransport({ host, port, secure, auth: { user, pass } });
+  return global.__mailer;
 }
 
 function resetEmailHtml(url: string) {
@@ -70,7 +74,7 @@ export async function requestPasswordResetAction(
   if (!parsed.success) return { ok: false, error: "Email inválido" };
 
   const { email } = parsed.data;
-  const user = await prisma.user.findUnique({ where: { email }, select: { id: true, email: true } });
+  const user = await prisma.usuario.findUnique({ where: { correo: email }, select: { id: true, correo: true } });
 
   // Respuesta constante (no enumeración)
   if (!user) return { ok: true };
@@ -83,12 +87,12 @@ export async function requestPasswordResetAction(
   const expiresAt = new Date(Date.now() + RESET_TTL_MIN * 60 * 1000); // El token expira en 15 minutos, lo que mejora la seguridad
 
   await prisma.passwordResetToken.create({
-    data: { userId: user.id, email: user.email, tokenHash, expiresAt },
+    data: { userId: user.id, email: user.correo, tokenHash, expiresAt },
   });
 
   const url = `${appUrl()}/auth/reset?token=${rawToken}`;
   try {
-    await SendResetEmail(user.email, url);
+    await SendResetEmail(user.correo, url);
   } catch (err) {
     console.error("Error enviando reset email:", err);
   }
@@ -98,7 +102,7 @@ export async function requestPasswordResetAction(
 
 export async function requestPasswordReset(input: { email: string }): Promise<void> {
   const parsed = requestResetSchema.parse(input);
-  const user = await prisma.user.findUnique({ where: { email: parsed.email }, select: { id: true, email: true } });
+  const user = await prisma.usuario.findUnique({ where: { correo: parsed.email }, select: { id: true, correo: true } });
   if (!user) return;
 
   // Invalidas los tokens anteriores no utilizados al solicitar uno nuevo (para evitar múltiples tokens válidos)
@@ -109,9 +113,9 @@ export async function requestPasswordReset(input: { email: string }): Promise<vo
   const expiresAt = new Date(Date.now() + RESET_TTL_MIN * 60 * 1000);
 
   await prisma.passwordResetToken.create({
-    data: { userId: user.id, email: user.email, tokenHash, expiresAt },
+    data: { userId: user.id, email: user.correo, tokenHash, expiresAt },
   });
 
   const url = `${appUrl()}/auth/reset?token=${rawToken}`;
-  await SendResetEmail(user.email, url);
+  await SendResetEmail(user.correo, url);
 }
