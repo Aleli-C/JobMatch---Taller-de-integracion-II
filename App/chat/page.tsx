@@ -4,7 +4,6 @@ import { useState } from 'react';
 import ChatSidebar from '../../components/ChatSideBar';
 import ChatMain from '../../components/ChatMain';
 import ChatInfoPanel from '../../components/ChatInfoPanel';
-import Header from '../../components/header'; // Importamos el componente Header
 
 type Message = { text: string; senderId: string; time: string };
 type ChatUser = { name: string; about: string; contact: string; avatar: string };
@@ -85,7 +84,6 @@ export default function ChatPage() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
-      <Header />
       <div className="flex w-full flex-grow bg-gray-100">
         <ChatSidebar chats={chats} activeChatId={activeChatId} onSelectChat={handleSelectChat} />
         <ChatMain activeChat={activeChat} onSendMessage={handleSendMessage} onToggleInfoPanel={handleToggleInfoPanel} />

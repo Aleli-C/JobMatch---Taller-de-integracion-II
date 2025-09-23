@@ -53,15 +53,6 @@ export default function MisPublicaciones() {
    return (
     <div className="min-h-screen bg-gray-50">
       <main className="max-w-7xl mx-auto px-6 py-10">
-        <header className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold text-blue-600">Mis Publicaciones</h1>
-          <nav className="flex gap-2">
-            <Link href="/publicaciones/nueva" className="px-3 py-2 bg-blue-600 text-white rounded">Nueva</Link>
-            <Link href="/chat" className="px-3 py-2 border rounded">Chat</Link>
-            <Link href="/perfil" className="px-3 py-2 border rounded">Perfil</Link>
-          </nav>
-        </header>
-
         {/* Filtro */}
         <div className="flex gap-2 mb-6">
           {["todo", "ofrecer", "buscar"].map((tipo) => (

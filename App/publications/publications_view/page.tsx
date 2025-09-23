@@ -1,57 +1,121 @@
 // app/publicaciones/page.tsx
-import Link from 'next/link'
-import { prisma } from '@/lib/prisma'
+import Link from "next/link";
+import { prisma } from "@/lib/prisma";
+import PublicationCard from "@/components/PublicationCard";
+import FilterBar from "@/components/FilterBar";
+
+type SearchParams = Record<string, string | string[] | undefined>;
 
 function clp(v: any) {
-  // Prisma Decimal -> number/string seguro para UI
-  const n = typeof v?.toNumber === 'function' ? v.toNumber() : Number(v) // Decimal → number
-  return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(n)
+  const n = typeof v?.toNumber === "function" ? v.toNumber() : Number(v);
+  return new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" }).format(n);
 }
 
-export default async function Page() {
+export default async function Page({ searchParams }: { searchParams: SearchParams }) {
+  // 1) Datos desde Prisma
   const pubs = await prisma.publicacion.findMany({
-    orderBy: { fechaPublicacion: 'desc' },
+    orderBy: { fechaPublicacion: "desc" },
     include: {
       categoria: { select: { nombre: true, icono: true } },
       ubicacion: { select: { ciudad: true, region: true } },
       usuario:   { select: { id: true, nombre: true, tipoUsuario: true } },
     },
-  })
+  });
+
+  // 2) Normalización (server)
+  const items = pubs.map((p) => {
+    const salaryValue =
+      typeof (p as any).remuneracion?.toNumber === "function"
+        ? (p as any).remuneracion.toNumber()
+        : Number((p as any).remuneracion ?? 0);
+
+    const location = p.ubicacion?.ciudad
+      ? `${p.ubicacion.ciudad}${p.ubicacion?.region ? `, ${p.ubicacion.region}` : ""}`
+      : undefined;
+
+    return {
+      id: p.id,
+      title: p.titulo,
+      description: p.descripcion ?? "",
+      icon: p.categoria?.icono ?? (p.tipo === "FREELANCE" ? "🧰" : "🧑‍💼"),
+      category: p.categoria?.nombre ?? "",
+      location: location ?? "",
+      salaryCLP: salaryValue ? clp(salaryValue) : undefined,
+      salaryValue,
+      jobType: p.tipo ?? "",
+    };
+  });
+
+  // 3) Opciones para filtros
+  const opt = <T extends string>(arr: T[]) =>
+    [{ value: "", label: "Todas" }, ...Array.from(new Set(arr.filter(Boolean))).map(v => ({ value: v, label: v }))];
+
+  const categories = opt(items.map(i => i.category));
+  const locations  = opt(items.map(i => i.location));
+  const jobTypes   = [{ value: "", label: "Todos" }, ...Array.from(new Set(items.map(i => i.jobType).filter(Boolean))).map(v => ({ value: v, label: v }))];
+  const salaries   = [
+    { value: "", label: "Cualquiera" },
+    { value: "0-300000", label: "≤ $300.000" },
+    { value: "300000-700000", label: "$300.000 – $700.000" },
+    { value: "700000-1200000", label: "$700.000 – $1.200.000" },
+    { value: "1200000+", label: "≥ $1.200.000" },
+  ];
+
+  // 4) Lee filtros desde searchParams (GET)
+  const sp = {
+    search:   String(searchParams.search ?? ""),
+    category: String(searchParams.category ?? ""),
+    location: String(searchParams.location ?? ""),
+    jobType:  String(searchParams.jobType ?? ""),
+    salary:   String(searchParams.salary ?? ""),
+  };
+
+  // 5) Filtrado en servidor
+  const filtered = items.filter(i => {
+    const q = sp.search.toLowerCase();
+    const okQ = !q || i.title.toLowerCase().includes(q) || i.description.toLowerCase().includes(q);
+    const okCat = !sp.category || i.category === sp.category;
+    const okLoc = !sp.location || i.location === sp.location;
+    const okType = !sp.jobType || i.jobType === sp.jobType;
+    const okSalary = (() => {
+      if (!sp.salary || !i.salaryValue) return true;
+      if (sp.salary.endsWith("+")) return i.salaryValue >= Number(sp.salary.replace("+",""));
+      const [minS, maxS] = sp.salary.split("-").map(Number);
+      return i.salaryValue >= (minS ?? 0) && i.salaryValue <= (maxS ?? Infinity);
+    })();
+    return okQ && okCat && okLoc && okType && okSalary;
+  });
 
   return (
-    <main className="max-w-7xl mx-auto px-6 py-8">
-      <header className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Publicaciones</h1>
-        <nav className="flex gap-2">
-          <Link href="/publicaciones/nueva" className="px-3 py-2 bg-blue-600 text-white rounded">Nueva</Link>
-          <Link href="/chat"   className="px-3 py-2 border rounded">Chat</Link>
-          <Link href="/perfil" className="px-3 py-2 border rounded">Perfil</Link>
-        </nav>
-      </header>
+    <main className="max-w-7xl mx-auto px-6 py-8 space-y-6">
+      {/* FilterBar envía GET → este page lee searchParams */}
+      <FilterBar
+        categories={categories}
+        locations={locations}
+        jobTypes={jobTypes}
+        salaries={salaries}
+        defaults={sp}
+      />
 
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {pubs.map(p => (
+        {filtered.map(p => (
           <Link key={p.id} href={`/publicaciones/${p.id}`} className="block">
-            {/* Tu componente de card actual */}
-            <div className="border rounded p-4 hover:shadow">
-              <div className="text-2xl">{p.icono ?? (p.tipo === 'FREELANCE' ? '🧰' : '🧑‍💼')}</div>
-              <h3 className="font-semibold mt-2">{p.titulo}</h3>
-              <p className="text-gray-600 line-clamp-3">{p.descripcion}</p>
-              <div className="mt-2 text-sm text-gray-500">
-                <span>{p.ubicacion?.ciudad ?? '—'}{p.ubicacion?.region ? `, ${p.ubicacion.region}` : ''}</span> · <span>{clp(p.remuneracion)}</span>
-              </div>
-              <div className="mt-1 text-xs text-gray-500">
-                {p.categoria?.nombre} · {p.tipo} · {p.estado}
-              </div>
-            </div>
+            <PublicationCard
+              title={p.title}
+              description={p.description}
+              icon={p.icon}
+              location={p.location || undefined}
+              salary={p.salaryCLP}
+            />
           </Link>
         ))}
-        {!pubs.length && (
-          <div className="text-gray-500">
-            No hay publicaciones. <Link href="/publicaciones/nueva" className="text-blue-600 underline">Crea la primera</Link>.
+
+        {!filtered.length && (
+          <div className="col-span-full text-gray-500">
+            No hay publicaciones{sp.search ? " para los filtros aplicados" : ""}.
           </div>
         )}
       </section>
     </main>
-  )
+  );
 }
