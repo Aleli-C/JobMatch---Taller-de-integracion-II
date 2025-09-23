@@ -57,10 +57,10 @@ export default function Home() {
       <section className="mx-auto max-w-7xl px-4 pb-20 sm:px-6 lg:px-8">
         <h2 className="mb-6 text-lg font-semibold text-zinc-900">Explora</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card href="/publications" title="Ver publicaciones" desc="Ofertas recientes con filtros." />
-          <Card href="/publications/nueva" title="Crear publicación" desc="Publica un trabajo en minutos." />
-          <Card href="/chat/chats" title="Mis chats" desc="Coordina detalles en tiempo real." />
-          <Card href="/forum" title="Foro" desc="Resuelve dudas y comparte consejos." />
+          <Card href="/publications_view"        title="Ver publicaciones"  desc="Ofertas recientes con filtros." />
+          <Card href="/publications_own/"   title="Crear publicación"  desc="Publica un trabajo en minutos." />
+          <Card href="/chat/chats"               title="Mis chats"          desc="Coordina detalles en tiempo real." />
+          <Card href="/forum"                    title="Foro"               desc="Resuelve dudas y comparte consejos." />
         </div>
       </section>
 

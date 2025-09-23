@@ -1,35 +1,33 @@
-// components/LoginForm.tsx
-"use client";
-import React, { useState } from "react";
-import { Spinner } from "../components/Spinner";
-import { loginUser, type LoginActionResult } from "@/app/auth/login/actions";
+'use client'
+import { useActionState } from 'react'            // React 19
+import { useFormStatus } from 'react-dom'
+import { loginUser, type LoginActionState } from '@/app/auth/login/actions'
+import { Spinner } from '@/components/Spinner'     // ajusta alias si no usas @
+
+function SubmitBtn() {
+  const { pending } = useFormStatus()
+  return (
+    <button type="submit" disabled={pending}>
+      {pending ? <Spinner size={20} /> : 'Iniciar Sesión'}
+    </button>
+  )
+}
+
+const initialState: LoginActionState = {}
 
 export const LoginForm = () => {
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    const formData = new FormData(e.currentTarget);
-    const result: LoginActionResult = await loginUser(formData); // puede redirigir
-
-    setIsLoading(false);
-
-    if (result && "error" in result) {
-      console.error(result.error);
-      // muestra errores en UI
-      return;
-    }
-    // Éxito: el redirect ya ocurrió en el servidor.
-  };
+  // Generics explícitos para evitar inferir unions raros
+  const [state, formAction] = useActionState<LoginActionState, FormData>(
+    loginUser,
+    initialState
+  )
 
   return (
-    <form onSubmit={handleSubmit}>
-      {/* inputs */}
-      <button type="submit" disabled={isLoading}>
-        {isLoading ? <Spinner size={20} /> : "Iniciar Sesión"}
-      </button>
+    <form action={formAction} className="space-y-4">
+      <input name="correo" type="email" placeholder="correo@dominio.com" required />
+      <input name="contrasena" type="password" placeholder="•••••••" required />
+      {state?.formError && <p className="text-red-600">{state.formError}</p>}
+      <SubmitBtn />
     </form>
-  );
-};
+  )
+}

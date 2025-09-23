@@ -1,23 +1,20 @@
 // middleware.ts
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+
+const PUBLIC = ["/auth/login", "/auth/register", "/auth/reset", "/favicon.ico"];
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  // Rutas públicas
-  if (
-    pathname.startsWith("/_next") ||
-    pathname.startsWith("/api") ||
-    pathname.startsWith("/auth") ||
-    pathname === "/favicon.ico"
-  ) return NextResponse.next();
-
-  const isLoggedIn = Boolean(req.cookies.get("session")?.value); // usa el nombre real de tu cookie
-  if (!isLoggedIn) {
-    const url = req.nextUrl.clone();
-    url.pathname = "/auth/login";
-    return NextResponse.redirect(url);
+  if (PUBLIC.some(p => pathname.startsWith(p)) || pathname.startsWith("/_next")) {
+    return NextResponse.next();
   }
+  const hasSession = req.cookies.has("session");
+  if (!hasSession) return NextResponse.redirect(new URL("/auth/login", req.url));
   return NextResponse.next();
 }
 
-export const config = { matcher: ["/:path*"] };
+export const config = {
+  // sin grupos de captura; excluye estáticos y /auth/**
+  matcher: ["/((?!_next|.*\\.(?:css|js|png|jpg|svg|ico)|auth/.*).*)"],
+};
