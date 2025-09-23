@@ -1,33 +1,44 @@
-'use client'
-import { useActionState } from 'react'            // React 19
-import { useFormStatus } from 'react-dom'
-import { loginUser, type LoginActionState } from '@/app/auth/login/actions'
-import { Spinner } from '@/components/Spinner'     // ajusta alias si no usas @
+// components/LoginForm.tsx
+"use client";
 
-function SubmitBtn() {
-  const { pending } = useFormStatus()
-  return (
-    <button type="submit" disabled={pending}>
-      {pending ? <Spinner size={20} /> : 'Iniciar Sesión'}
-    </button>
-  )
-}
+import { useActionState } from "react";
+import { loginUser } from "@/app/auth/login/actions";
 
-const initialState: LoginActionState = {}
+type LoginActionState = {
+  ok: boolean;
+  message?: string;
+  formError?: string; // <- lo estás leyendo en el componente
+  errors?: {
+    email?: string[];
+    password?: string[];
+    general?: string[];
+  };
+};
 
-export const LoginForm = () => {
-  // Generics explícitos para evitar inferir unions raros
-  const [state, formAction] = useActionState<LoginActionState, FormData>(
-    loginUser,
+const initialState: LoginActionState = { ok: false };
+
+const LoginForm = () => {
+  const [state, formAction, pending] = useActionState<LoginActionState, FormData>(
+    // si tu server action no recibe `prev`, casteamos la firma:
+    loginUser as unknown as (
+      prev: LoginActionState,
+      fd: FormData
+    ) => Promise<LoginActionState>,
     initialState
-  )
+  );
+
+  const topError =
+    state.formError ?? state.message ?? state.errors?.general?.[0];
 
   return (
-    <form action={formAction} className="space-y-4">
-      <input name="correo" type="email" placeholder="correo@dominio.com" required />
-      <input name="contrasena" type="password" placeholder="•••••••" required />
-      {state?.formError && <p className="text-red-600">{state.formError}</p>}
-      <SubmitBtn />
+    <form action={formAction}>
+      {/* ...inputs... */}
+      {topError && (
+        <p className="text-sm text-red-600 mt-2">{topError}</p>
+      )}
+      <button disabled={pending}>Iniciar sesión</button>
     </form>
-  )
-}
+  );
+};
+
+export default LoginForm;

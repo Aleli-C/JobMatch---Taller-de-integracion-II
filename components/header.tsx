@@ -1,47 +1,50 @@
+// components/Header.tsx
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+const LINKS = [
+  { href: "/", label: "Inicio" },                  // home (app/page.tsx)
+  { href: "/publications/publications_view", label: "Publicaciones" },
+  { href: "/publications/publications_own", label: "Mis Publicaciones" },
+  { href: "/chat", label: "Mis Chats" },
+  { href: "/profile", label: "Perfil" },
+  { href: "/auth/login", label: "Login" },
+  { href: "/auth/register", label: "Registro" },
+];
+
 export default function Header() {
+  const pathname = usePathname();
+  const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
+
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Logo + Nombre empresa */}
+          {/* Logo */}
           <div className="flex items-center space-x-2">
-            <img
-              src="/logo sin fondo.png"
-              alt="JobMatch Logo"
-              className="h-16 w-20"
-            />
+            <img src="/logo sin fondo.png" alt="JobMatch Logo" className="h-16 w-20" />
             <span className="text-2xl font-bold text-blue-600">JobMatch</span>
           </div>
 
-          {/* Navbar - Enlaces de navegación */}
+          {/* Desktop nav */}
           <nav className="hidden md:flex items-center space-x-8">
-            <a
-              href="/"
-              className="text-gray-700 hover:text-blue-600 text-sm font-medium transition-colors duration-200"
-            >
-              Inicio
-            </a>
-            <a
-              href="/publicar"
-              className="text-gray-700 hover:text-blue-600 text-sm font-medium transition-colors duration-200"
-            >
-              Publicar Trabajos
-            </a>
-            <a
-              href="/trabajos"
-              className="text-gray-700 hover:text-blue-600 text-sm font-medium transition-colors duration-200"
-            >
-              Ver Trabajos
-            </a>
-            <a
-              href="/chats"
-              className="text-gray-700 hover:text-blue-800 text-sm font-medium transition-colors duration-200"
-            >
-              Mis Chats
-            </a>
+            {LINKS.map(({ href, label }) => (
+              <Link
+                key={href}
+                href={href}
+                className={[
+                  "text-sm font-medium transition-colors duration-200",
+                  isActive(href) ? "text-blue-600" : "text-gray-700 hover:text-blue-600",
+                ].join(" ")}
+              >
+                {label}
+              </Link>
+            ))}
           </nav>
 
-          {/* Barra de búsqueda a la derecha */}
+          {/* Search */}
           <div className="flex items-center">
             <input
               type="text"
@@ -51,33 +54,21 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Navbar móvil - */}
+        {/* Mobile nav */}
         <div className="md:hidden border-t border-gray-200 py-2">
-          <nav className="flex justify-center space-x-6">
-            <a
-              href="/"
-              className="text-gray-700 hover:text-blue-600 text-xs font-medium transition-colors duration-200"
-            >
-              Inicio
-            </a>
-            <a
-              href="/publicar"
-              className="text-gray-700 hover:text-blue-600 text-xs font-medium transition-colors duration-200"
-            >
-              Publicar
-            </a>
-            <a
-              href="/trabajos"
-              className="text-gray-700 hover:text-blue-600 text-xs font-medium transition-colors duration-200"
-            >
-              Ver Trabajos
-            </a>
-            <a
-              href="/chats"
-              className="text-blue-600 hover:text-blue-800 text-xs font-medium transition-colors duration-200"
-            >
-              Mis Chats
-            </a>
+          <nav className="flex justify-center flex-wrap gap-4">
+            {LINKS.map(({ href, label }) => (
+              <Link
+                key={href}
+                href={href}
+                className={[
+                  "text-xs font-medium transition-colors duration-200",
+                  isActive(href) ? "text-blue-600" : "text-gray-700 hover:text-blue-600",
+                ].join(" ")}
+              >
+                {label}
+              </Link>
+            ))}
           </nav>
         </div>
       </div>

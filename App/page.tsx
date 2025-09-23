@@ -1,5 +1,5 @@
 "use client";
-
+import { redirect } from "next/navigation";
 import React, { useState } from "react";
 import {
   Users,
@@ -512,41 +512,8 @@ const JobMatchHome: React.FC = () => {
             </div>
           </div>
         </div>
-<<<<<<< HEAD
-      </section>
-
-      {/* ACCESOS RÁPIDOS */}
-      <section className="mx-auto max-w-7xl px-4 pb-20 sm:px-6 lg:px-8">
-        <h2 className="mb-6 text-lg font-semibold text-zinc-900">Explora</h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card href="/publications_view"        title="Ver publicaciones"  desc="Ofertas recientes con filtros." />
-          <Card href="/publications_own/"   title="Crear publicación"  desc="Publica un trabajo en minutos." />
-          <Card href="/chat/chats"               title="Mis chats"          desc="Coordina detalles en tiempo real." />
-          <Card href="/forum"                    title="Foro"               desc="Resuelve dudas y comparte consejos." />
-        </div>
-      </section>
-
-      {/* CTA FINAL */}
-      <section className="mx-auto max-w-7xl px-4 pb-28 sm:px-6 lg:px-8">
-        <div className="rounded-3xl border border-zinc-200 bg-white p-8 text-center shadow-xl">
-          <h3 className="text-xl font-semibold text-zinc-900">¿Listo para empezar?</h3>
-          <p className="mt-2 text-zinc-600">Crea tu perfil y encuentra tu próximo trabajo hoy.</p>
-          <div className="mt-5">
-            <Link
-              href="/profile"
-              className="inline-flex items-center rounded-xl bg-zinc-900 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-zinc-900/10 transition hover:-translate-y-0.5 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400"
-            >
-              Ir a mi perfil
-            </Link>
-          </div>
-        </div>
-      </section>
-    </main>
-=======
       </footer>
     </div>
->>>>>>> 8a735be6b2ebd43b55f4e78b1db6433f4cd729d0
   );
 };
-
 export default JobMatchHome;

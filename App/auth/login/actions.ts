@@ -1,34 +1,28 @@
-'use server'
-
-import { cookies } from 'next/headers'
-import { redirect } from 'next/navigation'
+// app/auth/login/actions.ts
+'use server';
+import bcrypt from 'bcryptjs';
+import { prisma } from '../../../lib/prisma';
+import { loginSchema } from '../../../lib/zod/auth';
+import { createSession } from '../../../lib/session';
+import { redirect } from 'next/navigation';
 
 export type LoginActionState = {
-  formError?: string
-  fieldErrors?: Record<string, string[]>
+  ok: boolean
+  message?: string
+  errors?: { email?: string[]; password?: string[]; general?: string[] }
 }
 
-/**
- * useActionState => (prevState, formData) => Promise<State>
- * En éxito: redirect('/home') (never), por lo tanto NO retornamos void.
- */
-export async function loginUser(
-  _prevState: LoginActionState,
-  formData: FormData
-): Promise<LoginActionState> {
-  const correo = String(formData.get('correo') ?? '')
-  const contrasena = String(formData.get('contrasena') ?? '')
+export async function loginUser( _prev: LoginActionState, formData: FormData) {
+  const parsed = loginSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
-  // TODO: valida credenciales; si falla:
-  if (!correo || !contrasena) {
-    return { formError: 'Credenciales inválidas' }
-  }
+  const { correo, contrasena } = parsed.data;
+  const user = await prisma.usuario.findUnique({ where: { correo } });
+  if (!user) return { error: { correo: ['Correo no registrado'] } };
 
-  // Éxito: set cookie en Server Action y redirige
-  const jar = await cookies()
-  jar.set('session', 'TOKEN_FIRMADO', {
-    httpOnly: true, sameSite: 'lax', secure: true, path: '/', maxAge: 60 * 60 * 24 * 7
-  }) // set cookie en Server Action, como indica la doc. :contentReference[oaicite:2]{index=2}
+  const ok = await bcrypt.compare(contrasena, user.contrasena);
+  if (!ok) return { error: { contraseña: ['Contraseña incorrecta'] } };
 
-  redirect('/home') // permitido en Server Actions. :contentReference[oaicite:3]{index=3}
+  await createSession({ sub: user.id, correo: user.correo, role: user.tipoUsuario });
+  redirect('/'); // <- lleva al Home
 }
