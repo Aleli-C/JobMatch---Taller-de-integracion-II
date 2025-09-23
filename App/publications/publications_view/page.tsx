@@ -88,7 +88,6 @@ export default async function Page({ searchParams }: { searchParams: SearchParam
 
   return (
     <main className="max-w-7xl mx-auto px-6 py-8 space-y-6">
-      {/* FilterBar envía GET → este page lee searchParams */}
       <FilterBar
         categories={categories}
         locations={locations}
