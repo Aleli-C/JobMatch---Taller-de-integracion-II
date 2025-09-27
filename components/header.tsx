@@ -25,7 +25,7 @@ export default function Header() {
         <div className="grid grid-cols-[auto_1fr_auto] items-center h-16">
           {/* Izquierda: Logo + nombre (pegado) */}
           <div className="flex items-center gap-2 justify-self-start">
-            <img src="/JobMatch.png" alt="JobMatch Logo" className="h-12 w-16" />
+            <img src="/JobMatch.png" alt="JobMatch Logo" className="h-12 w-12" />
             <span className="text-2xl font-bold text-blue-600">JobMatch</span>
           </div>
 
