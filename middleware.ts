@@ -7,7 +7,6 @@ const publicPaths = ["/", "/auth/login", "/auth/register", "/auth/reset"];
 // Rutas generales privadas (requieren sesion)
 const privatePaths = [
   "/profile",
-  "/publications",
   "/favorite",
   "/chat",
   "/forum",

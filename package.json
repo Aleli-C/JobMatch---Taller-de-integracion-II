@@ -14,7 +14,7 @@
     "postinstall": "prisma generate",
     "db:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio",
-     "typecheck": "next build --no-lint && exit 0"
+    "typecheck": "next build --no-lint && exit 0"
   },
   "repository": {
     "type": "git",
@@ -29,6 +29,7 @@
   },
   "homepage": "https://github.com/Aleli-C/JobMatch---Taller-de-integracion-II#readme",
   "dependencies": {
+    "@headlessui/react": "^2.2.9",
     "@prisma/client": "^6.16.2",
     "bcryptjs": "^3.0.2",
     "jose": "^6.1.0",
