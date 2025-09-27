@@ -14,7 +14,7 @@
     "postinstall": "prisma generate",
     "db:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio",
-     "typecheck": "next build --no-lint && exit 0"
+    "typecheck": "next build --no-lint && exit 0"
   },
   "repository": {
     "type": "git",
@@ -36,6 +36,7 @@
     "next": "^15.5.2",
     "next-themes": "^0.4.6",
     "nodemailer": "^7.0.6",
+    "package.json": "^2.0.1",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "socket.io": "^4.8.1",
