@@ -1,5 +1,3 @@
-// Prisma Schema JobMatch
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,55 +7,37 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ============================== Núcleo JobMatch ==============================
-
 model Usuario {
-  id          Int         @id @default(autoincrement())
-  rut         String      @unique @db.VarChar(12)
-  nombre      String      @db.VarChar(100)
-  correo      String      @unique @db.VarChar(255)
-  contrasena  String      @db.VarChar(255)
-  tipoUsuario TipoUsuario @map("tipo_usuario")
-  latitud     Decimal?    @db.Decimal(10, 8) // Más preciso que Float
-  longitud    Decimal?    @db.Decimal(11, 8)
-  direccion   String?     @db.VarChar(255)
-
-  // Relaciones (nombres más claros)
-  perfil             Perfil?
-  publicaciones      Publicacion[]
-  postulaciones      Postulacion[]
-  guardados          Guardados[]
-  chatsIniciados     Chat[]               @relation("ChatUsuario1")
-  chatsRecibidos     Chat[]               @relation("ChatUsuario2")
-  mensajesEnviados   Mensaje[]            @relation("MensajesTx")
-  mensajesRecibidos  Mensaje[]            @relation("MensajesRx")
-  bloqueosHechos     Bloqueo[]            @relation("BloqueosHechos")
-  bloqueosRecibidos  Bloqueo[]            @relation("BloqueosRecibidos")
-  reportesHechos     Reporte[]            @relation("ReportesHechos")
-  reportesRecibidos  Reporte[]            @relation("ReportesRecibidos")
-  historialEmpleador HistorialTrabajo[]   @relation("HistorialEmpleador")
-  historialEmpleado  HistorialTrabajo[]   @relation("HistorialEmpleado")
+  id                 Int                @id @default(autoincrement())
+  rut                String             @unique @db.VarChar(12)
+  nombre             String             @db.VarChar(100)
+  correo             String             @unique @db.VarChar(255)
+  contrasena         String             @db.VarChar(255)
+  tipoUsuario        TipoUsuario        @map("tipo_usuario")
+  latitud            Decimal?           @db.Decimal(10, 8)
+  longitud           Decimal?           @db.Decimal(11, 8)
+  direccion          String?            @db.VarChar(255)
+  bloqueosRecibidos  Bloqueo[]          @relation("BloqueosRecibidos")
+  bloqueosHechos     Bloqueo[]          @relation("BloqueosHechos")
   calificaciones     Calificacion[]
+  chatsIniciados     Chat[]             @relation("ChatUsuario1")
+  chatsRecibidos     Chat[]             @relation("ChatUsuario2")
   foros              Foro[]
+  guardados          Guardados[]
+  historialEmpleado  HistorialTrabajo[] @relation("HistorialEmpleado")
+  historialEmpleador HistorialTrabajo[] @relation("HistorialEmpleador")
+  mensajesRecibidos  Mensaje[]          @relation("MensajesRx")
+  mensajesEnviados   Mensaje[]          @relation("MensajesTx")
+  perfil             Perfil?
+  postulaciones      Postulacion[]
+  publicaciones      Publicacion[]
+  reportesRecibidos  Reporte[]          @relation("ReportesRecibidos")
+  reportesHechos     Reporte[]          @relation("ReportesHechos")
   respuestas         RespuestaForo[]
-  PasswordResetToken PasswordResetToken[]
 
   @@index([correo])
   @@index([latitud, longitud])
   @@map("usuarios")
-}
-
-model PasswordResetToken {
-  id        Int       @id @default(autoincrement())
-  userId    Int
-  email     String    @db.VarChar(255)
-  tokenHash String    @db.VarChar(64)
-  expiresAt DateTime
-  usedAt    DateTime?
-
-  user Usuario @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("password_reset_tokens")
 }
 
 model Perfil {
@@ -68,22 +48,19 @@ model Perfil {
   nivelInsignias   NivelInsignias @default(PRINCIPIANTE) @map("nivel_insignias")
   verificacion     Boolean
   disponibilidadHr String?        @map("disponibilidad_hr") @db.VarChar(100)
-
-  // Relación 1:1 con Usuario
-  usuario   Usuario @relation(fields: [usuarioId], references: [id])
-  usuarioId Int     @unique @map("usuario_id")
+  usuarioId        Int            @unique @map("usuario_id")
+  usuario          Usuario        @relation(fields: [usuarioId], references: [id])
 
   @@map("perfiles")
 }
 
 model Ubicacion {
-  id       Int     @id @default(autoincrement())
-  ciudad   String  @db.VarChar(100)
-  comuna   String  @db.VarChar(100)
-  region   String  @db.VarChar(100)
-  latitud  Decimal @db.Decimal(10, 8)
-  longitud Decimal @db.Decimal(11, 8)
-
+  id            Int           @id @default(autoincrement())
+  ciudad        String        @db.VarChar(100)
+  comuna        String        @db.VarChar(100)
+  region        String        @db.VarChar(100)
+  latitud       Decimal       @db.Decimal(10, 8)
+  longitud      Decimal       @db.Decimal(11, 8)
   publicaciones Publicacion[]
 
   @@index([ciudad])
@@ -92,11 +69,10 @@ model Ubicacion {
 }
 
 model Categoria {
-  id          Int     @id @default(autoincrement())
-  nombre      String  @db.VarChar(100)
-  descripcion String? @db.Text
-  icono       String? @db.VarChar(255)
-
+  id            Int           @id @default(autoincrement())
+  nombre        String        @db.VarChar(100)
+  descripcion   String?       @db.Text
+  icono         String?       @db.VarChar(255)
   publicaciones Publicacion[]
 
   @@index([nombre])
@@ -104,50 +80,42 @@ model Categoria {
 }
 
 model Publicacion {
-  id               Int               @id @default(autoincrement())
-  titulo           String            @db.VarChar(200)
-  descripcion      String            @db.Text
-  remuneracion     Decimal           @db.Decimal(10, 2) // Mejor para dinero
+  id               Int                @id @default(autoincrement())
+  titulo           String             @db.VarChar(200)
+  descripcion      String             @db.Text
+  remuneracion     Decimal            @db.Decimal(10, 2)
   tipo             TipoTrabajo
   estado           EstadoPublicacion
-  fechaPublicacion DateTime          @default(now()) @map("fecha_publicacion")
-  fechaCierre      DateTime?         @map("fecha_cierre")
-  icono            String?           @db.VarChar(255)
-
-  // Relaciones
-  usuario   Usuario @relation(fields: [usuarioId], references: [id])
-  usuarioId Int     @map("usuario_id")
-
-  ubicacion   Ubicacion @relation(fields: [ubicacionId], references: [id])
-  ubicacionId Int       @map("ubicacion_id")
-
-  categoria   Categoria @relation(fields: [categoriaId], references: [id])
-  categoriaId Int       @map("categoria_id")
-
-  postulaciones Postulacion[]
-  guardados     Guardados[]
-  reportes      Reporte[]
-  historial     HistorialTrabajo[]
+  fechaPublicacion DateTime           @default(now()) @map("fecha_publicacion")
+  fechaCierre      DateTime?          @map("fecha_cierre")
+  icono            String?            @db.VarChar(255)
+  usuarioId        Int                @map("usuario_id")
+  ubicacionId      Int                @map("ubicacion_id")
+  categoriaId      Int                @map("categoria_id")
+  guardados        Guardados[]
+  historial        HistorialTrabajo[]
+  postulaciones    Postulacion[]
+  categoria        Categoria          @relation(fields: [categoriaId], references: [id])
+  ubicacion        Ubicacion          @relation(fields: [ubicacionId], references: [id])
+  usuario          Usuario            @relation(fields: [usuarioId], references: [id])
+  reportes         Reporte[]
 
   @@index([estado])
   @@index([fechaPublicacion])
   @@index([categoriaId])
+  @@index([ubicacionId], map: "publicaciones_ubicacion_id_fkey")
+  @@index([usuarioId], map: "publicaciones_usuario_id_fkey")
   @@map("publicaciones")
 }
 
-// ============================== Comunicación y Moderación ==============================
-
 model Chat {
-  id       Int      @id @default(autoincrement())
-  creadoEn DateTime @default(now()) @map("creado_en")
-
-  usuario1   Usuario @relation("ChatUsuario1", fields: [usuario1Id], references: [id])
-  usuario1Id Int     @map("usuario1_id")
-
-  usuario2   Usuario @relation("ChatUsuario2", fields: [usuario2Id], references: [id])
-  usuario2Id Int     @map("usuario2_id")
-
-  mensajes Mensaje[]
+  id         Int       @id @default(autoincrement())
+  creadoEn   DateTime  @default(now()) @map("creado_en")
+  usuario1Id Int       @map("usuario1_id")
+  usuario2Id Int       @map("usuario2_id")
+  usuario1   Usuario   @relation("ChatUsuario1", fields: [usuario1Id], references: [id])
+  usuario2   Usuario   @relation("ChatUsuario2", fields: [usuario2Id], references: [id])
+  mensajes   Mensaje[]
 
   @@index([usuario1Id])
   @@index([usuario2Id])
@@ -155,18 +123,15 @@ model Chat {
 }
 
 model Mensaje {
-  id        Int      @id @default(autoincrement())
-  contenido String   @db.Text
-  enviadoEn DateTime @default(now()) @map("enviado_en")
-
-  chat   Chat @relation(fields: [chatId], references: [id])
-  chatId Int  @map("chat_id")
-
-  remitente   Usuario @relation("MensajesTx", fields: [remitenteId], references: [id])
-  remitenteId Int     @map("remitente_id")
-
-  destinatario   Usuario @relation("MensajesRx", fields: [destinatarioId], references: [id])
-  destinatarioId Int     @map("destinatario_id")
+  id             Int      @id @default(autoincrement())
+  contenido      String   @db.Text
+  enviadoEn      DateTime @default(now()) @map("enviado_en")
+  chatId         Int      @map("chat_id")
+  remitenteId    Int      @map("remitente_id")
+  destinatarioId Int      @map("destinatario_id")
+  chat           Chat     @relation(fields: [chatId], references: [id])
+  destinatario   Usuario  @relation("MensajesRx", fields: [destinatarioId], references: [id])
+  remitente      Usuario  @relation("MensajesTx", fields: [remitenteId], references: [id])
 
   @@index([chatId])
   @@index([remitenteId])
@@ -175,15 +140,13 @@ model Mensaje {
 }
 
 model Bloqueo {
-  id     Int      @id @default(autoincrement())
-  fecha  DateTime @default(now())
-  motivo String?  @db.Text
-
-  bloqueador   Usuario @relation("BloqueosHechos", fields: [bloqueadorId], references: [id])
-  bloqueadorId Int     @map("bloqueador_id")
-
-  bloqueado   Usuario @relation("BloqueosRecibidos", fields: [bloqueadoId], references: [id])
-  bloqueadoId Int     @map("bloqueado_id")
+  id           Int      @id @default(autoincrement())
+  fecha        DateTime @default(now())
+  motivo       String?  @db.Text
+  bloqueadorId Int      @map("bloqueador_id")
+  bloqueadoId  Int      @map("bloqueado_id")
+  bloqueado    Usuario  @relation("BloqueosRecibidos", fields: [bloqueadoId], references: [id])
+  bloqueador   Usuario  @relation("BloqueosHechos", fields: [bloqueadorId], references: [id])
 
   @@unique([bloqueadorId, bloqueadoId])
   @@index([bloqueadorId])
@@ -192,108 +155,93 @@ model Bloqueo {
 }
 
 model Reporte {
-  id     Int           @id @default(autoincrement())
-  motivo String        @db.Text
-  fecha  DateTime      @default(now())
-  estado EstadoReporte @default(PENDIENTE)
-
-  reportante   Usuario @relation("ReportesHechos", fields: [reportanteId], references: [id])
-  reportanteId Int     @map("reportante_id")
-
-  reportado   Usuario @relation("ReportesRecibidos", fields: [reportadoId], references: [id])
-  reportadoId Int     @map("reportado_id")
-
-  publicacion   Publicacion? @relation(fields: [publicacionId], references: [id])
-  publicacionId Int?         @map("publicacion_id")
+  id            Int           @id @default(autoincrement())
+  motivo        String        @db.Text
+  fecha         DateTime      @default(now())
+  estado        EstadoReporte @default(PENDIENTE)
+  reportanteId  Int           @map("reportante_id")
+  reportadoId   Int           @map("reportado_id")
+  publicacionId Int?          @map("publicacion_id")
+  publicacion   Publicacion?  @relation(fields: [publicacionId], references: [id])
+  reportado     Usuario       @relation("ReportesRecibidos", fields: [reportadoId], references: [id])
+  reportante    Usuario       @relation("ReportesHechos", fields: [reportanteId], references: [id])
 
   @@index([reportanteId])
   @@index([reportadoId])
   @@index([estado])
+  @@index([publicacionId], map: "reportes_publicacion_id_fkey")
   @@map("reportes")
 }
 
-// ==============================Postulación, Guardados, Historial, Calificación ==============================
-
 model Postulacion {
-  id     Int               @id @default(autoincrement())
-  fecha  DateTime          @default(now())
-  estado EstadoPostulacion @default(ENVIADA)
-
-  usuario   Usuario @relation(fields: [usuarioId], references: [id])
-  usuarioId Int     @map("usuario_id")
-
-  publicacion   Publicacion @relation(fields: [publicacionId], references: [id])
-  publicacionId Int         @map("publicacion_id")
+  id            Int               @id @default(autoincrement())
+  fecha         DateTime          @default(now())
+  estado        EstadoPostulacion @default(ENVIADA)
+  usuarioId     Int               @map("usuario_id")
+  publicacionId Int               @map("publicacion_id")
+  publicacion   Publicacion       @relation(fields: [publicacionId], references: [id])
+  usuario       Usuario           @relation(fields: [usuarioId], references: [id])
 
   @@unique([usuarioId, publicacionId])
   @@index([estado])
+  @@index([publicacionId], map: "postulaciones_publicacion_id_fkey")
   @@map("postulaciones")
 }
 
 model Guardados {
-  id    Int      @id @default(autoincrement())
-  fecha DateTime @default(now())
-
-  usuario   Usuario @relation(fields: [usuarioId], references: [id])
-  usuarioId Int     @map("usuario_id")
-
-  publicacion   Publicacion @relation(fields: [publicacionId], references: [id])
+  id            Int         @id @default(autoincrement())
+  fecha         DateTime    @default(now())
+  usuarioId     Int         @map("usuario_id")
   publicacionId Int         @map("publicacion_id")
+  publicacion   Publicacion @relation(fields: [publicacionId], references: [id])
+  usuario       Usuario     @relation(fields: [usuarioId], references: [id])
 
   @@unique([usuarioId, publicacionId])
+  @@index([publicacionId], map: "guardados_publicacion_id_fkey")
   @@map("guardados")
 }
 
 model HistorialTrabajo {
-  id          Int       @id @default(autoincrement())
-  fechaInicio DateTime  @map("fecha_inicio")
-  fechaFin    DateTime? @map("fecha_fin")
-  descripcion String?   @db.Text
-
-  empleador   Usuario @relation("HistorialEmpleador", fields: [empleadorId], references: [id])
-  empleadorId Int     @map("empleador_id")
-
-  empleado   Usuario @relation("HistorialEmpleado", fields: [empleadoId], references: [id])
-  empleadoId Int     @map("empleado_id")
-
-  publicacion   Publicacion? @relation(fields: [publicacionId], references: [id])
-  publicacionId Int?         @map("publicacion_id")
-
+  id             Int            @id @default(autoincrement())
+  fechaInicio    DateTime       @map("fecha_inicio")
+  fechaFin       DateTime?      @map("fecha_fin")
+  descripcion    String?        @db.Text
+  empleadorId    Int            @map("empleador_id")
+  empleadoId     Int            @map("empleado_id")
+  publicacionId  Int?           @map("publicacion_id")
   calificaciones Calificacion[]
+  empleado       Usuario        @relation("HistorialEmpleado", fields: [empleadoId], references: [id])
+  empleador      Usuario        @relation("HistorialEmpleador", fields: [empleadorId], references: [id])
+  publicacion    Publicacion?   @relation(fields: [publicacionId], references: [id])
 
   @@index([empleadorId])
   @@index([empleadoId])
+  @@index([publicacionId], map: "historial_trabajos_publicacion_id_fkey")
   @@map("historial_trabajos")
 }
 
 model Calificacion {
-  id         Int      @id @default(autoincrement())
-  puntuacion Int      @db.TinyInt // Cambié de enum a int (1-5)
-  comentario String?  @db.Text
-  fecha      DateTime @default(now())
-
-  historial   HistorialTrabajo @relation(fields: [historialId], references: [id])
+  id          Int              @id @default(autoincrement())
+  puntuacion  Int              @db.TinyInt
+  comentario  String?          @db.Text
+  fecha       DateTime         @default(now())
   historialId Int              @map("historial_id")
-
-  autor   Usuario @relation(fields: [autorId], references: [id])
-  autorId Int     @map("autor_id")
+  autorId     Int              @map("autor_id")
+  autor       Usuario          @relation(fields: [autorId], references: [id])
+  historial   HistorialTrabajo @relation(fields: [historialId], references: [id])
 
   @@index([historialId])
   @@index([autorId])
   @@map("calificaciones")
 }
 
-// ==============================Foro y Respuestas ==============================
-
 model Foro {
-  id       Int      @id @default(autoincrement())
-  titulo   String   @db.VarChar(200)
-  consulta String   @db.Text
-  fecha    DateTime @default(now())
-
-  usuario   Usuario @relation(fields: [usuarioId], references: [id])
-  usuarioId Int     @map("usuario_id")
-
+  id         Int             @id @default(autoincrement())
+  titulo     String          @db.VarChar(200)
+  consulta   String          @db.Text
+  fecha      DateTime        @default(now())
+  usuarioId  Int             @map("usuario_id")
+  usuario    Usuario         @relation(fields: [usuarioId], references: [id])
   respuestas RespuestaForo[]
 
   @@index([usuarioId])
@@ -305,20 +253,16 @@ model RespuestaForo {
   id        Int      @id @default(autoincrement())
   respuesta String   @db.Text
   fecha     DateTime @default(now())
-
-  foro   Foro @relation(fields: [foroId], references: [id])
-  foroId Int  @map("foro_id")
-
-  usuario   Usuario @relation(fields: [usuarioId], references: [id])
-  usuarioId Int     @map("usuario_id")
+  foroId    Int      @map("foro_id")
+  usuarioId Int      @map("usuario_id")
+  foro      Foro     @relation(fields: [foroId], references: [id])
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id])
 
   @@index([foroId])
   @@index([usuarioId])
   @@index([fecha])
   @@map("respuestas_foro")
 }
-
-// ==============================Enums ==============================
 
 enum TipoUsuario {
   EMPLEADOR
