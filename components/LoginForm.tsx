@@ -18,7 +18,10 @@ type LoginActionState = {
 const initialState: LoginActionState = { ok: false };
 
 const LoginForm = () => {
-  const [state, formAction, pending] = useActionState<LoginActionState, FormData>(
+  const [state, formAction, pending] = useActionState<
+    LoginActionState,
+    FormData
+  >(
     // si tu server action no recibe `prev`, casteamos la firma:
     loginUser as unknown as (
       prev: LoginActionState,
@@ -33,9 +36,7 @@ const LoginForm = () => {
   return (
     <form action={formAction}>
       {/* ...inputs... */}
-      {topError && (
-        <p className="text-sm text-red-600 mt-2">{topError}</p>
-      )}
+      {topError && <p className="text-sm text-red-600 mt-2">{topError}</p>}
       <button disabled={pending}>Iniciar sesión</button>
     </form>
   );
