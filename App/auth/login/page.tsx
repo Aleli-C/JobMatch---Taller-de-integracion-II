@@ -92,7 +92,7 @@ export default function Login() {
           {/* Logo + Nombre */}
           <div className="flex items-center space-x-2">
             <img
-              src="../../public/JobMatch.png"
+              src="/JobMatch.png"
               alt="JobMatch Logo"
               className="h-10 w-12"
             />
