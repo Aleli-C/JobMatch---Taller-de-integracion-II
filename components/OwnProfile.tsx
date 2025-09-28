@@ -1,9 +1,13 @@
+// components/OwnProfile.tsx
+
 'use client';
 
 import React from 'react';
 // Importamos los dos componentes hijos. La ruta se ajusta sin la extensión para la compilación.
 import UsuarioProfileAside from './UsuarioProfileAside'; 
 import UsuarioProfileTabs from './UsuarioProfileTabs'; 
+// ELIMINAMOS la importación innecesaria de UserProvider y MockUser desde '../app/profile/page'
+
 
 /**
  * Componente contenedor principal para la vista de perfil de usuario.
@@ -13,6 +17,8 @@ import UsuarioProfileTabs from './UsuarioProfileTabs';
  */
 export default function OwnProfile() {
   return (
+    // ELIMINAMOS el envoltorio de <UserProvider> aquí.
+    // Ahora solo se enfoca en el layout.
     <div className="min-h-screen bg-gray-50 p-4 sm:p-8">
         <div className="max-w-7xl mx-auto py-6">
             
@@ -26,11 +32,13 @@ export default function OwnProfile() {
                 
                 {/* 1. Barra Lateral */}
                 <div className="lg:w-96 flex-shrink-0">
+                    {/* UsuarioProfileAside usará el useUser del Provider padre */}
                     <UsuarioProfileAside />
                 </div>
 
                 {/* 2. Área de Pestañas (Contenido Principal) */}
                 <div className="flex-1 min-w-0">
+                    {/* UsuarioProfileTabs usará el useUser del Provider padre */}
                     <UsuarioProfileTabs />
                 </div>
             </div>
