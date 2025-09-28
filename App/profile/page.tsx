@@ -1,14 +1,13 @@
 'use client';
 
 import React, { useState, useEffect, createContext, useContext } from 'react';
-// Rutas corregidas asumiendo una estructura estándar de proyecto
-import UserProfileAside from '@/components/UsuarioProfileAside'; 
-import UserProfileTabs from '@/components/UsuarioProfileTabs';
-// Corregido: Asumiendo que user_data está en la raíz de la app o en una carpeta de utilidades
-import { getUser, User } from '@/lib/user_data'; 
+// Importamos el nuevo componente contenedor usando ruta relativa
+import OwnProfile from '../../components/OwnProfile'; 
+// Importamos la lógica de servicio y el tipo User usando ruta relativa
+import { getUser, User } from '../../lib/user_data'; 
 
 
-// 1. Definir el contexto
+// 1. Definición del contexto para el usuario
 interface UserContextType {
   user: User | null;
   loading: boolean;
@@ -27,6 +26,11 @@ export const useUser = () => {
   return context;
 };
 
+/**
+ * Componente Page principal para la ruta /profile.
+ * Se encarga de cargar los datos iniciales del usuario y proveerlos
+ * a través del contexto a toda la vista.
+ */
 export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -34,12 +38,12 @@ export default function ProfilePage() {
 
   useEffect(() => {
     // Simulamos la obtención del ID de la URL o sesión
-    // En un proyecto Next.js real, usarías useRouter o params
     const userId = 'current-user-id'; 
 
     const fetchUser = async () => {
       try {
         setLoading(true);
+        // Función simulada para obtener los datos del usuario
         const userData = await getUser(userId);
         setUser(userData);
         setError(null);
@@ -75,9 +79,9 @@ export default function ProfilePage() {
   // 2. Proporcionar el contexto a los hijos
   return (
     <UserContext.Provider value={contextValue}>
-      <main className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-8 p-4 lg:p-8 bg-gray-100">
-        <UserProfileAside />
-        <UserProfileTabs />
+      <main className="max-w-7xl mx-auto p-4 lg:p-8 bg-gray-100 min-h-screen">
+        {/* Renderizamos el nuevo componente contenedor que usará el contexto */}
+        <OwnProfile />
       </main>
     </UserContext.Provider>
   );
