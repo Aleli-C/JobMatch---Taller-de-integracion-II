@@ -3,6 +3,8 @@
 import React, { useState } from "react";
 import { z } from "zod";
 import Button from "../../../components/button";
+import { registerUser } from "./actions";
+import { useRouter } from "next/navigation";
 
 // Validación personalizada para RUT
 const rutRegex = /^[0-9]{1,2}\.[0-9]{3}\.[0-9]{3}-[0-9kK]{1}$/;
@@ -61,14 +63,14 @@ const registerSchema = z
       .min(2, "El nombre debe tener al menos 2 caracteres")
       .max(50, "El nombre no puede exceder 50 caracteres"),
     email: z.string().email("Por favor ingresa un email válido"),
-    password: z
+    contrasena: z
       .string()
       .min(8, "La contraseña debe tener al menos 8 caracteres")
       .regex(
         /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
         "La contraseña debe contener al menos una mayúscula, una minúscula y un número"
       ),
-    confirmPassword: z.string(),
+    confirmcontrasena: z.string(),
     region: z.string().min(1, "Seleccione una región"),
     ciudad: z
       .string()
@@ -79,29 +81,31 @@ const registerSchema = z
       .min(5, "La dirección debe tener al menos 5 caracteres")
       .max(255, "La dirección no puede exceder 255 caracteres"),
   })
-  .refine((data) => data.password === data.confirmPassword, {
+  .refine((data) => data.contrasena === data.confirmcontrasena, {
     message: "Las contraseñas no coinciden",
-    path: ["confirmPassword"],
+    path: ["confirmcontrasena"],
   });
 
 type RegisterForm = z.infer<typeof registerSchema>;
 
 export default function Register() {
+  const router = useRouter();
   const [formData, setFormData] = useState<RegisterForm>({
     rut: "",
     fullName: "",
     email: "",
-    password: "",
-    confirmPassword: "",
+    contrasena: "",
+    confirmcontrasena: "",
     region: "",
     ciudad: "",
     direccion: "",
   });
 
   const [errors, setErrors] = useState<
-    Partial<Record<keyof RegisterForm, string>>
+    Partial<Record<keyof RegisterForm | "general", string | string[]>>
   >({});
   const [isLoading, setIsLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   const formatRut = (value: string): string => {
     const cleaned = value.replace(/[^\dkK]/g, "");
@@ -140,7 +144,7 @@ export default function Register() {
     }));
 
     // Limpiar error específico cuando el usuario empiece a escribir
-    if (errors[name as keyof RegisterForm]) {
+    if (errors[name as keyof typeof errors]) {
       setErrors((prev) => ({
         ...prev,
         [name]: undefined,
@@ -148,19 +152,56 @@ export default function Register() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
+    setErrors({});
+    setSuccessMessage("");
 
     try {
-      // Validar datos con Zod
+      // Validar datos con Zod primero (del lado del cliente)
       const validatedData = registerSchema.parse(formData);
 
-      // Simular registro exitoso (aquí irían las llamadas a la API)
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Crear FormData para enviar al servidor
+      const formDataToSend = new FormData();
+      formDataToSend.append("rut", validatedData.rut);
+      formDataToSend.append("fullName", validatedData.fullName);
+      formDataToSend.append("email", validatedData.email);
+      formDataToSend.append("contrasena", validatedData.contrasena);
+      formDataToSend.append(
+        "confirmcontrasena",
+        validatedData.confirmcontrasena
+      );
+      formDataToSend.append("region", validatedData.region);
+      formDataToSend.append("ciudad", validatedData.ciudad);
+      formDataToSend.append("direccion", validatedData.direccion);
 
-      alert("¡Cuenta creada exitosamente! Redirigiendo...");
-      // Aquí rediriges al login o dashboard
+      // Llamar a la Server Action
+      const result = await registerUser(formDataToSend);
+
+      if (result.success) {
+        setSuccessMessage("¡Cuenta creada exitosamente! Redirigiendo...");
+
+        // Limpiar el formulario
+        setFormData({
+          rut: "",
+          fullName: "",
+          email: "",
+          contrasena: "",
+          confirmcontrasena: "",
+          region: "",
+          ciudad: "",
+          direccion: "",
+        });
+
+        // Redirigir después de 2 segundos
+        setTimeout(() => {
+          router.push("/auth/login"); // Ajusta la ruta según tu aplicación
+        }, 2000);
+      } else if (result.error) {
+        // Manejar errores del servidor
+        setErrors(result.error);
+      }
     } catch (error) {
       if (error instanceof z.ZodError) {
         // Formatear errores de Zod
@@ -171,6 +212,13 @@ export default function Register() {
           }
         });
         setErrors(formattedErrors);
+      } else {
+        // Error genérico
+        setErrors({
+          general: [
+            "Ocurrió un error inesperado. Por favor, intenta nuevamente.",
+          ],
+        });
       }
     } finally {
       setIsLoading(false);
@@ -192,7 +240,7 @@ export default function Register() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => alert("Redirigir a Login")}
+            onClick={() => router.push("/auth/login")}
           >
             Iniciar Sesión
           </Button>
@@ -220,6 +268,22 @@ export default function Register() {
                   </p>
                 </div>
 
+                {/* Mensaje de éxito */}
+                {successMessage && (
+                  <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-md text-sm">
+                    {successMessage}
+                  </div>
+                )}
+
+                {/* Mensaje de error general */}
+                {errors.general && (
+                  <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
+                    {Array.isArray(errors.general)
+                      ? errors.general.join(", ")
+                      : errors.general}
+                  </div>
+                )}
+
                 <form onSubmit={handleSubmit} className="space-y-3">
                   {/* RUT */}
                   <div>
@@ -244,7 +308,11 @@ export default function Register() {
                       }`}
                     />
                     {errors.rut && (
-                      <p className="text-red-500 text-xs mt-1">{errors.rut}</p>
+                      <p className="text-red-500 text-xs mt-1">
+                        {Array.isArray(errors.rut)
+                          ? errors.rut.join(", ")
+                          : errors.rut}
+                      </p>
                     )}
                   </div>
 
@@ -271,7 +339,9 @@ export default function Register() {
                     />
                     {errors.fullName && (
                       <p className="text-red-500 text-xs mt-1">
-                        {errors.fullName}
+                        {Array.isArray(errors.fullName)
+                          ? errors.fullName.join(", ")
+                          : errors.fullName}
                       </p>
                     )}
                   </div>
@@ -299,7 +369,9 @@ export default function Register() {
                     />
                     {errors.email && (
                       <p className="text-red-500 text-xs mt-1">
-                        {errors.email}
+                        {Array.isArray(errors.email)
+                          ? errors.email.join(", ")
+                          : errors.email}
                       </p>
                     )}
                   </div>
@@ -332,7 +404,9 @@ export default function Register() {
                     </select>
                     {errors.region && (
                       <p className="text-red-500 text-xs mt-1">
-                        {errors.region}
+                        {Array.isArray(errors.region)
+                          ? errors.region.join(", ")
+                          : errors.region}
                       </p>
                     )}
                   </div>
@@ -360,7 +434,9 @@ export default function Register() {
                     />
                     {errors.ciudad && (
                       <p className="text-red-500 text-xs mt-1">
-                        {errors.ciudad}
+                        {Array.isArray(errors.ciudad)
+                          ? errors.ciudad.join(", ")
+                          : errors.ciudad}
                       </p>
                     )}
                   </div>
@@ -388,7 +464,9 @@ export default function Register() {
                     />
                     {errors.direccion && (
                       <p className="text-red-500 text-xs mt-1">
-                        {errors.direccion}
+                        {Array.isArray(errors.direccion)
+                          ? errors.direccion.join(", ")
+                          : errors.direccion}
                       </p>
                     )}
                   </div>
@@ -396,27 +474,29 @@ export default function Register() {
                   {/* Contraseña */}
                   <div>
                     <label
-                      htmlFor="password"
+                      htmlFor="contrasena"
                       className="block text-sm font-medium text-gray-700 mb-1"
                     >
                       Contraseña
                     </label>
                     <input
                       type="password"
-                      id="password"
-                      name="password"
-                      value={formData.password}
+                      id="contrasena"
+                      name="contrasena"
+                      value={formData.contrasena}
                       onChange={handleInputChange}
                       placeholder="••••••••"
                       className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
-                        errors.password
+                        errors.contrasena
                           ? "border-red-500 focus:ring-red-500"
                           : "border-gray-300"
                       }`}
                     />
-                    {errors.password && (
+                    {errors.contrasena && (
                       <p className="text-red-500 text-xs mt-1">
-                        {errors.password}
+                        {Array.isArray(errors.contrasena)
+                          ? errors.contrasena.join(", ")
+                          : errors.contrasena}
                       </p>
                     )}
                   </div>
@@ -424,27 +504,29 @@ export default function Register() {
                   {/* Confirmar Contraseña */}
                   <div>
                     <label
-                      htmlFor="confirmPassword"
+                      htmlFor="confirmcontrasena"
                       className="block text-sm font-medium text-gray-700 mb-1"
                     >
                       Confirmar Contraseña
                     </label>
                     <input
                       type="password"
-                      id="confirmPassword"
-                      name="confirmPassword"
-                      value={formData.confirmPassword}
+                      id="confirmcontrasena"
+                      name="confirmcontrasena"
+                      value={formData.confirmcontrasena}
                       onChange={handleInputChange}
                       placeholder="••••••••"
                       className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
-                        errors.confirmPassword
+                        errors.confirmcontrasena
                           ? "border-red-500 focus:ring-red-500"
                           : "border-gray-300"
                       }`}
                     />
-                    {errors.confirmPassword && (
+                    {errors.confirmcontrasena && (
                       <p className="text-red-500 text-xs mt-1">
-                        {errors.confirmPassword}
+                        {Array.isArray(errors.confirmcontrasena)
+                          ? errors.confirmcontrasena.join(", ")
+                          : errors.confirmcontrasena}
                       </p>
                     )}
                   </div>
@@ -472,7 +554,7 @@ export default function Register() {
                 <p className="text-center text-xs text-gray-600">
                   ¿Ya tienes una cuenta?{" "}
                   <button
-                    onClick={() => alert("Redirigir a Login")}
+                    onClick={() => router.push("/auth/login")}
                     className="text-blue-600 hover:text-blue-800 font-medium"
                   >
                     Inicia Sesión
