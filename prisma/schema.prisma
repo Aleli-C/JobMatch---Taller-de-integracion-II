@@ -18,9 +18,9 @@ model Usuario {
   correo      String      @unique @db.VarChar(255)
   contrasena  String      @db.VarChar(255)
   tipoUsuario TipoUsuario @map("tipo_usuario")
-  region String? @db.VarChar(50)
-  ciudad String? @db.VarChar(60)
-  direccion   String?     @db.VarChar(255)
+  region      String      @db.VarChar(50)
+  ciudad      String      @db.VarChar(60)
+  direccion   String      @db.VarChar(255)
 
   // Relaciones (nombres más claros)
   perfil             Perfil?
