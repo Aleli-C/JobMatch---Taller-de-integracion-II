@@ -4,9 +4,58 @@ import React, { useState } from "react";
 import { z } from "zod";
 import Button from "../../../components/button";
 
+// Validación personalizada para RUT
+const rutRegex = /^[0-9]{1,2}\.[0-9]{3}\.[0-9]{3}-[0-9kK]{1}$/;
+
+const validateRut = (rut: string): boolean => {
+  if (!rutRegex.test(rut)) return false;
+
+  const cleanRut = rut.replace(/\./g, "").replace("-", "");
+  const rutNumber = cleanRut.slice(0, -1);
+  const verifier = cleanRut.slice(-1).toUpperCase();
+
+  let sum = 0;
+  let multiplier = 2;
+
+  for (let i = rutNumber.length - 1; i >= 0; i--) {
+    sum += parseInt(rutNumber[i]) * multiplier;
+    multiplier = multiplier === 7 ? 2 : multiplier + 1;
+  }
+
+  const remainder = sum % 11;
+  const expectedVerifier =
+    remainder === 0 ? "0" : remainder === 1 ? "K" : (11 - remainder).toString();
+
+  return verifier === expectedVerifier;
+};
+
+// Regiones de Chile
+const regionesChile = [
+  "Arica y Parinacota",
+  "Tarapacá",
+  "Antofagasta",
+  "Atacama",
+  "Coquimbo",
+  "Valparaíso",
+  "Metropolitana de Santiago",
+  "Libertador General Bernardo O'Higgins",
+  "Maule",
+  "Ñuble",
+  "Biobío",
+  "La Araucanía",
+  "Los Ríos",
+  "Los Lagos",
+  "Aysén del General Carlos Ibáñez del Campo",
+  "Magallanes y de la Antártica Chilena",
+];
+
 // Schema de validación con Zod
 const registerSchema = z
   .object({
+    rut: z
+      .string()
+      .min(1, "El RUT es requerido")
+      .refine(validateRut, "RUT inválido. Formato: 11.111.111-0"),
     fullName: z
       .string()
       .min(2, "El nombre debe tener al menos 2 caracteres")
@@ -20,6 +69,15 @@ const registerSchema = z
         "La contraseña debe contener al menos una mayúscula, una minúscula y un número"
       ),
     confirmPassword: z.string(),
+    region: z.string().min(1, "Seleccione una región"),
+    ciudad: z
+      .string()
+      .min(2, "La ciudad debe tener al menos 2 caracteres")
+      .max(60, "La ciudad no puede exceder 60 caracteres"),
+    direccion: z
+      .string()
+      .min(5, "La dirección debe tener al menos 5 caracteres")
+      .max(255, "La dirección no puede exceder 255 caracteres"),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Las contraseñas no coinciden",
@@ -30,10 +88,14 @@ type RegisterForm = z.infer<typeof registerSchema>;
 
 export default function Register() {
   const [formData, setFormData] = useState<RegisterForm>({
+    rut: "",
     fullName: "",
     email: "",
     password: "",
     confirmPassword: "",
+    region: "",
+    ciudad: "",
+    direccion: "",
   });
 
   const [errors, setErrors] = useState<
@@ -41,11 +103,40 @@ export default function Register() {
   >({});
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const formatRut = (value: string): string => {
+    const cleaned = value.replace(/[^\dkK]/g, "");
+    if (cleaned.length <= 1) return cleaned;
+
+    const rut = cleaned.slice(0, -1);
+    const verifier = cleaned.slice(-1);
+
+    let formatted = "";
+    if (rut.length > 6) {
+      formatted = `${rut.slice(0, -6)}.${rut.slice(-6, -3)}.${rut.slice(
+        -3
+      )}-${verifier}`;
+    } else if (rut.length > 3) {
+      formatted = `${rut.slice(0, -3)}.${rut.slice(-3)}-${verifier}`;
+    } else {
+      formatted = `${rut}-${verifier}`;
+    }
+
+    return formatted;
+  };
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
+
+    let processedValue = value;
+    if (name === "rut") {
+      processedValue = formatRut(value);
+    }
+
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: processedValue,
     }));
 
     // Limpiar error específico cuando el usuario empiece a escribir
@@ -86,14 +177,6 @@ export default function Register() {
     }
   };
 
-  const handleSocialLogin = (provider: "google" | "facebook") => {
-    alert(
-      `Iniciar sesión con ${
-        provider === "google" ? "Google" : "Facebook"
-      } - Función por implementar`
-    );
-  };
-
   return (
     <div className="min-h-screen bg-white">
       {/* Header separado con logo y botón de iniciar sesión */}
@@ -118,17 +201,17 @@ export default function Register() {
 
       {/* Contenido principal */}
       <div className="flex justify-center items-start px-4 py-8">
-        <div className="w-full max-w-5xl bg-white rounded-2xl shadow-lg overflow-hidden">
-          <div className="flex min-h-[600px]">
+        <div className="w-full max-w-6xl bg-white rounded-2xl shadow-lg overflow-hidden">
+          <div className="flex min-h-[700px]">
             {/* Lado izquierdo - Formulario */}
-            <div className="flex-1 p-8 flex items-center">
-              <div className="w-full max-w-sm mx-auto">
+            <div className="flex-1 p-6 flex items-center">
+              <div className="w-full max-w-md mx-auto">
                 {/* Título del formulario */}
-                <div className="text-center mb-6">
+                <div className="text-center mb-4">
                   <h2 className="text-2xl font-bold text-gray-900 mb-1">
                     Crea Tu Cuenta
                   </h2>
-                  <h3 className="text-xl font-bold text-gray-900 mb-3">
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">
                     JobMatch
                   </h3>
                   <p className="text-gray-600 text-sm leading-relaxed">
@@ -137,7 +220,34 @@ export default function Register() {
                   </p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-3">
+                  {/* RUT */}
+                  <div>
+                    <label
+                      htmlFor="rut"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      RUT
+                    </label>
+                    <input
+                      type="text"
+                      id="rut"
+                      name="rut"
+                      value={formData.rut}
+                      onChange={handleInputChange}
+                      placeholder="12.345.678-9"
+                      maxLength={12}
+                      className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
+                        errors.rut
+                          ? "border-red-500 focus:ring-red-500"
+                          : "border-gray-300"
+                      }`}
+                    />
+                    {errors.rut && (
+                      <p className="text-red-500 text-xs mt-1">{errors.rut}</p>
+                    )}
+                  </div>
+
                   {/* Nombre Completo */}
                   <div>
                     <label
@@ -152,7 +262,7 @@ export default function Register() {
                       name="fullName"
                       value={formData.fullName}
                       onChange={handleInputChange}
-                      placeholder="John Doe"
+                      placeholder="Juan Pérez"
                       className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
                         errors.fullName
                           ? "border-red-500 focus:ring-red-500"
@@ -180,7 +290,7 @@ export default function Register() {
                       name="email"
                       value={formData.email}
                       onChange={handleInputChange}
-                      placeholder="john.doe@ejemplo.com"
+                      placeholder="juan.perez@ejemplo.com"
                       className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
                         errors.email
                           ? "border-red-500 focus:ring-red-500"
@@ -190,6 +300,95 @@ export default function Register() {
                     {errors.email && (
                       <p className="text-red-500 text-xs mt-1">
                         {errors.email}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Región */}
+                  <div>
+                    <label
+                      htmlFor="region"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Región
+                    </label>
+                    <select
+                      id="region"
+                      name="region"
+                      value={formData.region}
+                      onChange={handleInputChange}
+                      className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
+                        errors.region
+                          ? "border-red-500 focus:ring-red-500"
+                          : "border-gray-300"
+                      }`}
+                    >
+                      <option value="">Seleccione una región</option>
+                      {regionesChile.map((region) => (
+                        <option key={region} value={region}>
+                          {region}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.region && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors.region}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Ciudad/Comuna */}
+                  <div>
+                    <label
+                      htmlFor="ciudad"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Ciudad/Comuna
+                    </label>
+                    <input
+                      type="text"
+                      id="ciudad"
+                      name="ciudad"
+                      value={formData.ciudad}
+                      onChange={handleInputChange}
+                      placeholder="Santiago"
+                      className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
+                        errors.ciudad
+                          ? "border-red-500 focus:ring-red-500"
+                          : "border-gray-300"
+                      }`}
+                    />
+                    {errors.ciudad && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors.ciudad}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Dirección */}
+                  <div>
+                    <label
+                      htmlFor="direccion"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Dirección
+                    </label>
+                    <input
+                      type="text"
+                      id="direccion"
+                      name="direccion"
+                      value={formData.direccion}
+                      onChange={handleInputChange}
+                      placeholder="Av. Providencia 123"
+                      className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
+                        errors.direccion
+                          ? "border-red-500 focus:ring-red-500"
+                          : "border-gray-300"
+                      }`}
+                    />
+                    {errors.direccion && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors.direccion}
                       </p>
                     )}
                   </div>
@@ -263,11 +462,9 @@ export default function Register() {
                 </form>
 
                 {/* Separador */}
-                <div className="flex items-center my-4">
+                <div className="flex items-center my-3">
                   <div className="flex-1 border-t border-gray-300"></div>
-                  <span className="px-3 text-xs text-gray-500">
-                    O 
-                  </span>
+                  <span className="px-3 text-xs text-gray-500">O</span>
                   <div className="flex-1 border-t border-gray-300"></div>
                 </div>
 
@@ -284,7 +481,7 @@ export default function Register() {
               </div>
             </div>
 
-            {/* Lado derecho - Imagen sin fondo azul */}
+            {/* Lado derecho - Imagen */}
             <div
               className="flex-1 flex items-center justify-center p-6"
               style={{ backgroundColor: "rgba(1,105,193,1)" }}

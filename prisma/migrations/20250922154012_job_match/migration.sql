@@ -6,14 +6,13 @@ CREATE TABLE `usuarios` (
     `correo` VARCHAR(255) NOT NULL,
     `contrasena` VARCHAR(255) NOT NULL,
     `tipo_usuario` ENUM('EMPLEADOR', 'EMPLEADO') NOT NULL,
-    `latitud` DECIMAL(10, 8) NULL,
-    `longitud` DECIMAL(11, 8) NULL,
+    `region` VARCHAR(50) NULL,
+    `ciudad` VARCHAR(60) NULL,
     `direccion` VARCHAR(255) NULL,
 
     UNIQUE INDEX `usuarios_rut_key`(`rut`),
     UNIQUE INDEX `usuarios_correo_key`(`correo`),
     INDEX `usuarios_correo_idx`(`correo`),
-    INDEX `usuarios_latitud_longitud_idx`(`latitud`, `longitud`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
