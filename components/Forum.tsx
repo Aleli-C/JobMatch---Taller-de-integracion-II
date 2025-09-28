@@ -6,6 +6,7 @@ import ViewTopicModal from "./ViewTopicModal";
 import CreateTopicModal from "./CreateTopicModal";
 import ForumFilterBar from "./ForumFilterBar";
 import { forumTopics as initialTopics } from "../lib/utils/data";
+import ForumCreateCard from "./ForumCreateCard";
 import type { Topic } from "../lib/types/forum";
 
 const itemsPerPage = 10;
@@ -126,7 +127,10 @@ const Forum = () => {
           Crear nuevo tema
         </button>
       </div>
-
+      <ForumCreateCard onCreate={handleCreateTopic} />
+      <h3 className="text-lg font-semibold text-gray-800 mb-2">
+        Buscar preguntas o respuestas
+      </h3>
       {/* --- Aquí va la barra de filtros --- */}
       <ForumFilterBar
         authors={authorOptions}
@@ -137,7 +141,7 @@ const Forum = () => {
           setCurrentPage(1);
         }}
       />
-
+      
       <div className="space-y-4">
         {topicsToRender.map((topic, index) => (
           <ForumCard key={topic.title + "-" + start + "-" + index} topic={topic} onClick={() => handleViewTopic(topic)} />
