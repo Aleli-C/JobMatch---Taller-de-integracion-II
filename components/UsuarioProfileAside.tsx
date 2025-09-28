@@ -3,7 +3,7 @@
 'use client';
 
 import React, { useState } from 'react';
-// Importación corregida: Ahora traemos useUser directamente desde el nuevo proveedor
+// Importación corregida: Apunta al nuevo UserProvider.tsx en la misma carpeta
 import { useUser } from './UserProvider'; 
 
 /**
@@ -43,73 +43,63 @@ const UsuarioProfileAside = () => {
 
   return (
     <aside className="flex-1 flex flex-col gap-5 min-w-80">
-      
-      {/* Tarjeta Principal de Información y Botones */}
       <div className="bg-white p-6 rounded-xl shadow-lg text-center">
         <div className="relative w-36 h-36 rounded-full mx-auto mb-4 border-4 border-blue-500">
           <img
             id="profile-img"
-            src={user.imagenUrl}
+            // Datos dinámicos: user.imagenUrl
+            src={user.imagenUrl} 
             alt={`Foto de perfil de ${user.nombre}`}
-            className="w-full h-full object-cover rounded-full"
-            // Placeholder/Fallback para la imagen
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.onerror = null; 
-              target.src = 'https://placehold.co/150x150/cccccc/333333?text=Perfil';
-            }}
+            className="w-full h-full rounded-full object-cover p-2 bg-gray-200"
           />
         </div>
-        
-        {/* Datos dinámicos del usuario */}
-        <h2 className="text-2xl font-bold text-gray-800 mb-1">{user.nombre}</h2>
-        <div className="flex items-center justify-center text-yellow-500 mb-4">
-          <span className="text-xl mr-1">⭐</span>
-          <span className="font-semibold">{user.calificacion.toFixed(1)}</span>
-          <span className="text-sm text-gray-500 ml-2">({user.conteoResenas} reseñas)</span>
+        {/* Datos dinámicos: user.nombre */}
+        <h2 className="text-2xl font-bold mb-1">{user.nombre}</h2>
+        {/* Datos dinámicos: user.descripcion */}
+        <p className="text-sm text-gray-500 leading-relaxed mb-4">
+          {user.descripcion}
+        </p>
+        <div className="text-sm text-gray-400 mb-5">
+          {/* Datos dinámicos: user.calificacion y user.conteoResenas */}
+          <p>
+            ⭐ {user.calificacion} (<span id="review-count">{user.conteoResenas}</span> reseñas)
+          </p>
         </div>
-
-        {/* Botón de acción */}
-        <button
-          onClick={handleFollowClick}
-          className={`w-full py-2 px-4 rounded-full font-bold transition duration-300 transform hover:scale-105 shadow-md 
-            ${isFollowing 
-              ? 'bg-red-500 text-white hover:bg-red-600' 
-              : 'bg-blue-500 text-white hover:bg-blue-600'}`
-          }
-        >
-          {isFollowing ? 'Dejar de Seguir' : 'Seguir Perfil'}
-        </button>
+        <div className="profile-actions flex justify-center gap-4">
+          <button className="bg-blue-500 text-white font-bold py-2 px-6 rounded-full hover:bg-blue-600 transition duration-300 shadow-md">
+            Contactar
+          </button>
+          <button
+            onClick={handleFollowClick}
+            className={`font-bold py-2 px-6 rounded-full transition duration-300 shadow-md ${
+              isFollowing
+                ? 'bg-blue-500 text-white hover:bg-blue-600'
+                : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+            }`}
+          >
+            {isFollowing ? 'Siguiendo' : 'Seguir'}
+          </button>
+        </div>
       </div>
-
-      {/* Tarjeta de Biografía */}
       <div className="bg-white p-6 rounded-xl shadow-lg">
-        <h3 className="text-lg font-semibold mb-4 text-gray-800">Sobre mí</h3>
-        <p className="text-sm text-gray-700 leading-relaxed">{user.descripcion}</p>
-      </div>
-      
-      {/* Tarjeta de Habilidades */}
-      <div className="bg-white p-6 rounded-xl shadow-lg">
-        <h3 className="text-lg font-semibold mb-4 text-gray-800">Habilidades Clave</h3>
-        <div className="flex flex-wrap gap-2">
-          {user.habilidades.map((habilidad, index) => (
-            <span
-              key={index}
-              className="px-3 py-1 text-xs font-medium text-blue-800 bg-blue-100 rounded-full shadow-sm"
-            >
-              {habilidad}
-            </span>
+        <h3 className="text-lg font-semibold mb-4">Habilidades</h3>
+        <ul className="flex flex-wrap justify-center gap-2">
+          {/* Datos dinámicos: user.habilidades */}
+          {user.habilidades.map((skill) => (
+            <li key={skill} className="bg-blue-100 text-blue-700 font-medium text-sm rounded-full px-4 py-1">
+              {skill}
+            </li>
           ))}
-        </div>
+        </ul>
       </div>
-
-      {/* Tarjeta de Contacto */}
       <div className="bg-white p-6 rounded-xl shadow-lg">
         <h3 className="text-lg font-semibold mb-4">Contacto</h3>
         <p className="text-sm text-gray-600 mb-1">
+          {/* Datos dinámicos: user.correo */}
           <strong>Correo:</strong> {user.correo}
         </p>
         <p className="text-sm text-gray-600">
+          {/* Datos dinámicos: user.telefono */}
           <strong>Teléfono:</strong> {user.telefono}
         </p>
       </div>
@@ -129,9 +119,9 @@ const UsuarioProfileAside = () => {
               </button>
               <button
                 onClick={handleUnfollowConfirm}
-                className="bg-red-500 text-white font-bold py-2 px-6 rounded-full hover:bg-red-600 transition duration-300 shadow-md"
+                className="bg-red-500 text-white font-bold py-2 px-6 rounded-full hover:bg-red-600 transition duration-300"
               >
-                Sí, dejar de seguir
+                Continuar
               </button>
             </div>
           </div>
