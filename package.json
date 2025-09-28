@@ -14,7 +14,7 @@
     "postinstall": "prisma generate",
     "db:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio",
-     "typecheck": "next build --no-lint && exit 0"
+    "typecheck": "next build --no-lint && exit 0"
   },
   "repository": {
     "type": "git",
