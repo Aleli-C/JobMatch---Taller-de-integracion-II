@@ -8,6 +8,7 @@ const publicPaths = ["/", "/auth/login", "/auth/register", "/auth/reset"];
 const privatePaths = [
   "/profile",
   "/favorite",
+//"/publications",
   "/chat",
   "/forum",
   "/admin",
