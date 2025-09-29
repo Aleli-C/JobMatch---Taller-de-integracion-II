@@ -1,15 +1,21 @@
 // app/chat/[conversationId]/page.tsx
+
+// ====================================================================
+// IMPORTS Y LÓGICA DEL SERVIDOR (No se toca)
+// ====================================================================
 import { getSessionUser } from "@/lib/getSessionUser";
 import { redirect } from "next/navigation";
-import {
-  getMessagesByChatId,
-  saveMessage,
-  findOrCreateChat,
-} from "@/lib/repositories/chatPersistence";
+import { getChatsByUserId, saveMessage } from "@/lib/repositories/chatPersistence";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
-// Server Action para enviar mensajes
+// Componentes Visuales que vamos a usar
+import ChatSidebar from "@/components/ChatSidebar";
+import ChatMain from "@/components/ChatMain";
+import ChatInfoPanel from "@/components/ChatInfoPanel";
+import { useState } from "react";
+
+// La Server Action para enviar mensajes se mantiene intacta
 async function handleSendMessage(formData: FormData) {
   "use server";
 
@@ -22,109 +28,108 @@ async function handleSendMessage(formData: FormData) {
 
   await saveMessage({ chatId, remitenteId, destinatarioId, contenido });
 
-  // Revalida esta página para que aparezca el mensaje nuevo
   revalidatePath(`/chat/${chatId}`);
 }
 
-export default async function ChatPage({
-  params,
-}: {
-  params: { conversationId: string };
-}) {
+
+// ====================================================================
+// COMPONENTE DE CLIENTE PARA MANEJAR LA UI INTERACTIVA
+// ====================================================================
+
+function ChatView({ session, allChats, activeChat, destinatarioId }: { session: any, allChats: any[], activeChat: any, destinatarioId: number }) {
+  'use client'; // Marcamos este componente como de cliente
+
+  const [isInfoPanelVisible, setIsInfoPanelVisible] = useState(false);
+
+  // Adaptamos los datos para que los componentes visuales los entiendan
+  const otherUser = activeChat.usuario1.id === session.id ? activeChat.usuario2 : activeChat.usuario1;
+
+  const adaptedActiveChat = {
+    id: activeChat.id.toString(),
+    user: {
+      name: otherUser.nombre,
+      about: otherUser.sobreMi || 'Sin información de perfil.',
+      contact: otherUser.email || 'Contacto no disponible.',
+      avatar: otherUser.nombre.substring(0, 2).toUpperCase(),
+    },
+    messages: activeChat.mensajes.map((m: any) => ({
+      text: m.contenido,
+      senderId: m.remitenteId === session.id ? 'me' : otherUser.id.toString(),
+      time: new Date(m.enviadoEn).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }),
+    }))
+  };
+
+  return (
+    <div className="flex h-screen overflow-hidden bg-gray-100 dark:bg-gray-900">
+      <ChatSidebar chats={allChats} session={session} activeChatId={activeChat.id} />
+      
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Envolvemos el ChatMain en el formulario para que la Server Action funcione */}
+        <form action={handleSendMessage} className="flex-1 flex flex-col overflow-hidden">
+          {/* Inputs ocultos necesarios para la Server Action */}
+          <input type="hidden" name="chatId" value={activeChat.id} />
+          <input type="hidden" name="remitenteId" value={session.id} />
+          <input type="hidden" name="destinatarioId" value={destinatarioId} />
+
+          {/* ChatMain ahora vive dentro del form y se encarga de la UI */}
+          <ChatMain
+            activeChat={adaptedActiveChat}
+            onToggleInfoPanel={() => setIsInfoPanelVisible(!isInfoPanelVisible)}
+            // Ya no necesita onSendMessage, el form se encarga de eso
+          />
+        </form>
+      </div>
+      
+      <ChatInfoPanel 
+        user={adaptedActiveChat.user}
+        isVisible={isInfoPanelVisible}
+        onClose={() => setIsInfoPanelVisible(false)}
+      />
+    </div>
+  );
+}
+
+
+// ====================================================================
+// COMPONENTE DE SERVIDOR (Punto de entrada)
+// ====================================================================
+
+export default async function ChatPage({ params }: { params: { conversationId: string } }) {
   const session = await getSessionUser();
   if (!session) redirect("/auth/login");
 
   const chatId = Number(params.conversationId);
 
-  // Obtenemos el chat con usuarios para identificar destinatario si no hay mensajes
-  const chat = await prisma.chat.findUnique({
-    where: { id: chatId },
-    include: { usuario1: true, usuario2: true },
+  // 1. Obtenemos TODOS los chats del usuario para la barra lateral
+  const allChats = await getChatsByUserId(session.id);
+
+  // 2. Obtenemos el chat ACTIVO con todos sus detalles
+  const activeChat = await prisma.chat.findUnique({
+    where: { id: chatId, OR: [{ usuario1Id: session.id }, { usuario2Id: session.id }] },
+    include: {
+      usuario1: true,
+      usuario2: true,
+      mensajes: { orderBy: { enviadoEn: "asc" } },
+    },
   });
 
-  if (!chat) {
-    return (
-      <main className="p-6 max-w-3xl mx-auto">
-        <p className="text-center text-red-500">
-          Este chat no existe o ha sido eliminado.
-        </p>
-      </main>
-    );
+  // Si el chat no existe o el usuario no pertenece a él, lo mandamos a la página principal de chats
+  if (!activeChat) {
+    return redirect("/chat");
   }
 
-  const messages = await getMessagesByChatId(chatId);
+  // 3. Calculamos el destinatario (lógica que ya tenías)
+  const destinatarioId = activeChat.usuario1.id === session.id 
+    ? activeChat.usuario2.id 
+    : activeChat.usuario1.id;
 
-  // Identificar destinatario:
-  let destinatarioId: number | null = null;
-  if (messages.length > 0) {
-    destinatarioId =
-      messages[0].remitenteId === session.id
-        ? messages[0].destinatarioId
-        : messages[0].remitenteId;
-  } else {
-    // Si no hay mensajes, deducirlo del chat
-    destinatarioId =
-      chat.usuario1.id === session.id ? chat.usuario2.id : chat.usuario1.id;
-  }
-
+  // 4. Renderizamos el componente de cliente pasándole todos los datos necesarios
   return (
-    <main className="p-4 sm:p-6 md:p-8 max-w-3xl mx-auto">
-      <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 space-y-4">
-        <h1 className="text-xl font-bold">
-          Conversación con{" "}
-          {chat.usuario1.id === session.id
-            ? chat.usuario2.nombre
-            : chat.usuario1.nombre}
-        </h1>
-
-        {/* Historial de mensajes */}
-        <div className="h-80 overflow-y-auto border rounded-lg p-4 space-y-2 flex flex-col">
-          {messages.length === 0 ? (
-            <p className="text-gray-500 text-center">
-              Aún no hay mensajes en este chat.
-            </p>
-          ) : (
-            messages.map((m) => (
-              <div
-                key={m.id}
-                className={`p-2 rounded-lg max-w-[70%] ${
-                  m.remitenteId === session.id
-                    ? "bg-blue-500 text-white self-end text-right"
-                    : "bg-gray-200 text-black self-start text-left"
-                }`}
-              >
-                <p>{m.contenido}</p>
-                <span className="text-xs opacity-70 block">
-                  {new Date(m.enviadoEn).toLocaleTimeString()}
-                </span>
-              </div>
-            ))
-          )}
-        </div>
-
-        {/* Formulario para enviar mensaje */}
-        {destinatarioId && (
-          <form action={handleSendMessage} className="flex gap-2">
-            <input type="hidden" name="chatId" value={chatId} />
-            <input type="hidden" name="remitenteId" value={session.id} />
-            <input type="hidden" name="destinatarioId" value={destinatarioId} />
-
-            <input
-              type="text"
-              name="contenido"
-              className="border rounded p-2 flex-1"
-              placeholder="Escribe un mensaje..."
-              required
-            />
-            <button
-              type="submit"
-              className="bg-blue-500 text-white px-4 py-2 rounded"
-            >
-              Enviar
-            </button>
-          </form>
-        )}
-      </div>
-    </main>
+    <ChatView 
+      session={session}
+      allChats={allChats}
+      activeChat={activeChat}
+      destinatarioId={destinatarioId}
+    />
   );
 }
