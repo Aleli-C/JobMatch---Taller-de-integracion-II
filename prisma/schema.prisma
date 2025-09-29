@@ -18,9 +18,9 @@ model Usuario {
   correo      String      @unique @db.VarChar(255)
   contrasena  String      @db.VarChar(255)
   tipoUsuario TipoUsuario @map("tipo_usuario")
-  latitud     Decimal?    @db.Decimal(10, 8) // Más preciso que Float
-  longitud    Decimal?    @db.Decimal(11, 8)
-  direccion   String?     @db.VarChar(255)
+  region      String      @db.VarChar(50)
+  ciudad      String      @db.VarChar(60)
+  direccion   String      @db.VarChar(255)
 
   // Relaciones (nombres más claros)
   perfil             Perfil?
@@ -43,7 +43,6 @@ model Usuario {
   PasswordResetToken PasswordResetToken[]
 
   @@index([correo])
-  @@index([latitud, longitud])
   @@map("usuarios")
 }
 

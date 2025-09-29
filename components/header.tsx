@@ -10,6 +10,7 @@ const LINKS = [
   { href: "/publications/publications_own", label: "Mis Publicaciones" },
   { href: "/chat", label: "Mis Chats" },
   { href: "/profile", label: "Perfil" },
+  { href: "/forum", label: "Foro" },
 ];
 
 export default function Header() {

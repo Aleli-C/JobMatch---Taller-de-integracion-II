@@ -36,10 +36,14 @@ const FilterBar: FC<FilterBarProps> = ({ categories, locations, jobTypes, salari
         </div>
         <div className="space-y-2">
           <label className="flex items-center text-sm font-medium text-gray-700">
-            <MapPin className="w-4 h-4 mr-2" />Ubicación
+            <MapPin className="w-4 h-4 mr-2" />Ciudad
           </label>
           <select name="location" defaultValue={defaults?.location ?? ""} className="w-full px-3 py-2 border rounded-md">
-            {locations.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            {locations.map(o => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
           </select>
         </div>
         <div className="space-y-2">
