@@ -1,88 +1,21 @@
 "use client";
 
-import React, { useState } from "react";
-import { z } from "zod";
+import React from "react";
+import { useActionState } from "react";
+import { loginUser, type LoginActionState } from "./actions";
 import Button from "../../../components/button";
+import { useRouter } from "next/navigation";
 
-// Schema de validación con Zod
-const loginSchema = z.object({
-  email: z.string().email("Por favor ingresa un email válido"),
-  password: z.string().min(1, "La contraseña es requerida"),
-});
-
-type LoginForm = z.infer<typeof loginSchema>;
+const initialState: LoginActionState = {
+  ok: false,
+};
 
 export default function Login() {
-  const [formData, setFormData] = useState<LoginForm>({
-    email: "",
-    password: "",
-  });
-
-  const [errors, setErrors] = useState<
-    Partial<Record<keyof LoginForm, string>>
-  >({});
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-
-    // Limpiar error específico cuando el usuario empiece a escribir
-    if (errors[name as keyof LoginForm]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: undefined,
-      }));
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    try {
-      // Validar datos con Zod
-      const validatedData = loginSchema.parse(formData);
-
-      // Simular login exitoso (aquí irían las llamadas a la API)
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      alert("¡Inicio de sesión exitoso! Redirigiendo...");
-      // Aquí rediriges al dashboard
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        // Formatear errores de Zod
-        const formattedErrors: Partial<Record<keyof LoginForm, string>> = {};
-        error.issues.forEach((err) => {
-          if (err.path[0]) {
-            formattedErrors[err.path[0] as keyof LoginForm] = err.message;
-          }
-        });
-        setErrors(formattedErrors);
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSocialLogin = (provider: "google" | "facebook") => {
-    alert(
-      `Iniciar sesión con ${
-        provider === "google" ? "Google" : "Facebook"
-      } - Función por implementar`
-    );
-  };
-
-  const handleForgotPassword = () => {
-    alert("Redirigir a recuperación de contraseña - Función por implementar");
-  };
-
-  const handleRegister = () => {
-    alert("Redirigir a registro - Función por implementar");
-  };
+  const router = useRouter();
+  const [state, formAction, isPending] = useActionState(
+    loginUser,
+    initialState
+  );
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -92,7 +25,7 @@ export default function Login() {
           {/* Logo + Nombre */}
           <div className="flex items-center space-x-2">
             <img
-              src="../../public/JobMatch.png"
+              src="/JobMatch.png"
               alt="JobMatch Logo"
               className="h-10 w-12"
             />
@@ -100,7 +33,11 @@ export default function Login() {
           </div>
 
           {/* Botón Registro */}
-          <Button variant="outline" size="sm" onClick={handleRegister}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => router.push("/auth/register")}
+          >
             Registro
           </Button>
         </div>
@@ -120,62 +57,71 @@ export default function Login() {
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Error general */}
+            {state.errors?.general && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-red-600 text-sm">
+                  {state.errors.general[0]}
+                </p>
+              </div>
+            )}
+
+            <form action={formAction} className="space-y-4">
               {/* Correo Electrónico */}
               <div>
                 <label
-                  htmlFor="email"
+                  htmlFor="correo"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
                   Correo Electrónico
                 </label>
                 <input
                   type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
+                  id="correo"
+                  name="correo"
                   placeholder="tu@ejemplo.com"
                   className={`w-full px-3 py-3 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors bg-gray-100 ${
-                    errors.email
+                    state.errors?.correo
                       ? "border-red-500 focus:ring-red-500"
                       : "border-gray-300"
                   }`}
                 />
-                {errors.email && (
-                  <p className="text-red-500 text-xs mt-1">{errors.email}</p>
+                {state.errors?.correo && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {state.errors.correo[0]}
+                  </p>
                 )}
               </div>
 
               {/* Contraseña */}
               <div>
                 <label
-                  htmlFor="password"
+                  htmlFor="contrasena"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
                   Contraseña
                 </label>
                 <input
                   type="password"
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
+                  id="contrasena"
+                  name="contrasena"
                   placeholder="••••••••"
                   className={`w-full px-3 py-3 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors bg-gray-100 ${
-                    errors.password
+                    state.errors?.contrasena
                       ? "border-red-500 focus:ring-red-500"
                       : "border-gray-300"
                   }`}
                 />
-                {errors.password && (
-                  <p className="text-red-500 text-xs mt-1">{errors.password}</p>
+                {state.errors?.contrasena && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {state.errors.contrasena[0]}
+                  </p>
                 )}
               </div>
 
               {/* Botón de Login */}
-              <Button type="submit" disabled={isLoading} className="w-full">
-                {isLoading ? "Iniciando Sesión..." : "Iniciar Sesión"}
+              <Button type="submit" disabled={isPending} className="w-full">
+                {isPending ? "Iniciando Sesión..." : "Iniciar Sesión"}
               </Button>
             </form>
 
@@ -189,8 +135,9 @@ export default function Login() {
             {/* Link olvidaste contraseña */}
             <div className="text-center mb-4">
               <button
-                onClick={handleForgotPassword}
+                onClick={() => router.push("/auth/reset")}
                 className="text-sm text-gray-600 hover:text-blue-600"
+                type="button"
               >
                 ¿Olvidaste tu contraseña?
               </button>
@@ -200,10 +147,10 @@ export default function Login() {
             <p className="text-center text-sm text-gray-600">
               ¿No tienes cuenta aún?{" "}
               <button
-                onClick={handleRegister}
+                onClick={() => router.push("/auth/register")}
                 className="text-blue-600 hover:text-blue-800 font-medium"
               >
-                Regístrate!
+                ¡Regístrate!
               </button>
             </p>
           </div>
