@@ -1,42 +1,16 @@
 // app/chat/page.tsx
 import { redirect } from "next/navigation";
-import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/getSessionUser";
 import Link from "next/link";
+import { getChatsByUserId } from "@/lib/repositories/chatPersistence";
 
 export default async function MisChatsPage() {
-  // 1. Obtenemos la sesión del usuario a partir de la cookie
   const session = await getSessionUser();
+  if (!session) redirect("/auth/login");
 
-  // 2. Validación extra: si no hay sesión, redirigimos
-  if (!session) {
-    redirect("/auth/login");
-  }
+  // ✅ ahora usamos el repositorio
+  const chats = await getChatsByUserId(session.id);
 
-  // 3. Consultamos los chats del usuario actual
-  const chats = await prisma.chat.findMany({
-    where: {
-      // CORRECCIÓN: Los campos en el esquema son `usuario1_id` y `usuario2_id`,
-      // que Prisma convierte a `usuario1Id` y `usuario2Id`.
-      OR: [{ usuario1Id: session.id }, { usuario2Id: session.id }],
-    },
-    include: {
-      usuario1: {
-        // CORRECCIÓN: El campo ID en la tabla `usuarios` es `id`.
-        select: { id: true, nombre: true },
-      },
-      usuario2: {
-        // CORRECCIÓN: El campo ID en la tabla `usuarios` es `id`.
-        select: { id: true, nombre: true },
-      },
-      mensajes: {
-        orderBy: { enviadoEn: "desc" },
-        take: 1, // último mensaje
-      },
-    },
-  });
-
-  // 4. Renderizamos la vista
   return (
     <main className="p-4 sm:p-6 md:p-8 max-w-4xl mx-auto">
       <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6">
@@ -53,7 +27,6 @@ export default async function MisChatsPage() {
         ) : (
           <ul className="space-y-3">
             {chats.map((chat) => {
-              // CORRECCIÓN: Usamos 'id' para la comparación, que viene de la tabla `usuarios`.
               const otherUser =
                 chat.usuario1.id === session.id
                   ? chat.usuario2
@@ -62,7 +35,6 @@ export default async function MisChatsPage() {
               const lastMessage = chat.mensajes[0];
 
               return (
-                // CORRECCIÓN: El ID del chat en la tabla `chats` es `id`.
                 <li key={chat.id}>
                   <Link href={`/chat/${chat.id}`} legacyBehavior>
                     <a className="block p-4 border dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
@@ -72,9 +44,7 @@ export default async function MisChatsPage() {
                         </p>
                         {lastMessage && (
                           <p className="text-xs text-gray-400">
-                            {new Date(
-                              lastMessage.enviadoEn
-                            ).toLocaleTimeString()}
+                            {new Date(lastMessage.enviadoEn).toLocaleTimeString()}
                           </p>
                         )}
                       </div>
