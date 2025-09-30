@@ -1,39 +1,32 @@
+// middleware.ts
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { jwtVerify } from "jose";
 
-// Rutas publicas (accesibles sin login)
-const publicPaths = ["/", "/auth/login", "/auth/register", "/auth/reset"];
+const PUBLIC = ["/", "/auth/login", "/auth/register", "/auth/reset"];
+const PRIVATE = ["/profile", "/favorite", "/chat", "/forum", "/publications"];
+const key = () => new TextEncoder().encode(process.env.AUTH_SECRET!);
 
-// Rutas generales privadas (requieren sesion)
-const privatePaths = [
-  "/profile",
-  "/favorite",
-//"/publications",
-  "/chat",
-  "/forum",
-  "/publications",
-];
+async function isValid(token?: string) {
+  if (!token) return false;
+  try { await jwtVerify(token, key()); return true; } catch { return false; }
+}
 
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-
-  // Cookie de autenticacion
   const token = req.cookies.get("authToken")?.value;
 
-  // Intento de acceso a ruta privada sin token → redirigir a login
-  if (privatePaths.some((p) => pathname.startsWith(p)) && !token) {
+  const needsAuth = PRIVATE.some(p => pathname.startsWith(p));
+  if (needsAuth && !(await isValid(token))) {
     return NextResponse.redirect(new URL("/auth/login", req.url));
   }
 
-  // Intento de acceso a login/register/reset con token → redirigir a profile
-  if (publicPaths.includes(pathname) && token && pathname !== "/") {
+  const goingPublic = PUBLIC.includes(pathname);
+  if (goingPublic && pathname !== "/" && (await isValid(token))) {
     return NextResponse.redirect(new URL("/profile", req.url));
   }
 
   return NextResponse.next();
 }
 
-// Configuracion: aplica a todas las rutas excepto assets estáticos
-export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
-};
+export const config = { matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"] };

@@ -27,6 +27,6 @@ export async function loginUser(_prev: LoginActionState, formData: FormData) {
   const ok = await bcrypt.compare(contrasena, user.contrasena);
   if (!ok) return { ok: false, errors: { contrasena: ["Credenciales inválidas"] } };
 
-  await createSession({ sub: user.id, correo: user.correo, role: user.tipoUsuario });
+  await createSession({ sub: String(user.id), correo: user.correo, role: user.tipoUsuario });
   redirect("/"); // NO try/catch, NO return después. :contentReference[oaicite:1]{index=1}
 }
