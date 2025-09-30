@@ -320,8 +320,8 @@ model RespuestaForo {
 // ==============================Enums ==============================
 
 enum TipoUsuario {
-  EMPLEADOR
-  EMPLEADO
+  USUARIO
+  ADMIN
 }
 
 enum TipoTrabajo {
