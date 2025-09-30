@@ -14,6 +14,7 @@ import {
   Briefcase,
 } from "lucide-react";
 import Link from "next/link";
+import { logout } from "@/app/auth/login/logout_"; // ajusta la ruta si no usas "@"
 
 export default function JobMatchHome() {
   const features = [
@@ -38,6 +39,14 @@ export default function JobMatchHome() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-end">
             <nav className="flex items-center gap-4">
+              <form action={logout}>
+                <button
+                  type="submit"
+                  className="text-gray-700 hover:text-red-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                >
+                  Cerrar sesión
+                </button>
+              </form>
               <Link
                 href="/auth/login"
                 className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"

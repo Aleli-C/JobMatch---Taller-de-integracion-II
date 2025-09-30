@@ -6,14 +6,25 @@ CREATE TABLE `usuarios` (
     `correo` VARCHAR(255) NOT NULL,
     `contrasena` VARCHAR(255) NOT NULL,
     `tipo_usuario` ENUM('EMPLEADOR', 'EMPLEADO') NOT NULL,
-    `latitud` DECIMAL(10, 8) NULL,
-    `longitud` DECIMAL(11, 8) NULL,
-    `direccion` VARCHAR(255) NULL,
+    `region` VARCHAR(50) NOT NULL,
+    `ciudad` VARCHAR(60) NOT NULL,
+    `direccion` VARCHAR(255) NOT NULL,
 
     UNIQUE INDEX `usuarios_rut_key`(`rut`),
     UNIQUE INDEX `usuarios_correo_key`(`correo`),
     INDEX `usuarios_correo_idx`(`correo`),
-    INDEX `usuarios_latitud_longitud_idx`(`latitud`, `longitud`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `password_reset_tokens` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `userId` INTEGER NOT NULL,
+    `email` VARCHAR(255) NOT NULL,
+    `tokenHash` VARCHAR(64) NOT NULL,
+    `expiresAt` DATETIME(3) NOT NULL,
+    `usedAt` DATETIME(3) NULL,
+
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -214,6 +225,9 @@ CREATE TABLE `respuestas_foro` (
     INDEX `respuestas_foro_fecha_idx`(`fecha`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- AddForeignKey
+ALTER TABLE `password_reset_tokens` ADD CONSTRAINT `password_reset_tokens_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `usuarios`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `perfiles` ADD CONSTRAINT `perfiles_usuario_id_fkey` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
