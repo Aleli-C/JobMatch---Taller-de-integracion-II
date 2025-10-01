@@ -43,7 +43,11 @@ export default async function Page({ searchParams }: { searchParams: SearchParam
       salaryCLP: salaryValue ? clp(salaryValue) : undefined,
       salaryValue,
       jobType: p.tipo ?? "",
+      usuario: p.usuario
+        ? { nombre: p.usuario.nombre, tipoUsuario: p.usuario.tipoUsuario }
+        : undefined,
     };
+
   });
 
   // 3) Opciones para filtros
@@ -88,6 +92,14 @@ export default async function Page({ searchParams }: { searchParams: SearchParam
 
   return (
     <main className="max-w-7xl mx-auto px-6 py-8 space-y-6">
+
+      <section className="mb-6 text-center sm:text-left">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-blue-600 mb-2">
+            Explora Oportunidades Laborales
+          </h1>
+          <p className="text-gray-600">Encuentra trabajos disponibles en tu ciudad</p>
+      </section>
+      
       <FilterBar
         categories={categories}
         locations={locations}
@@ -98,15 +110,17 @@ export default async function Page({ searchParams }: { searchParams: SearchParam
 
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {filtered.map(p => (
-          <Link key={p.id} href={`/publicaciones/${p.id}`} className="block">
-            <PublicationCard
-              title={p.title}
-              description={p.description}
-              icon={p.icon}
-              location={p.location || undefined}
-              salary={p.salaryCLP}
-            />
-          </Link>
+          <PublicationCard
+            key={p.id}
+            title={p.title}
+            description={p.description}
+            icon={p.icon}
+            location={p.location || undefined}
+            salary={p.salaryCLP}
+            jobType={p.jobType}
+            category={p.category}
+            author={p.usuario}
+          />
         ))}
 
         {!filtered.length && (
