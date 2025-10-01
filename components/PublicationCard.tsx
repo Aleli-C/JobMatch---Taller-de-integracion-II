@@ -1,3 +1,4 @@
+//components/PublicationCard.tsx
 "use client";
 
 import { useState } from "react";
@@ -15,6 +16,7 @@ type PublicationCardProps = {
   author?: { nombre: string; tipoUsuario: string };
   onEdit?: () => void;
   onDelete?: () => void;
+  showDetailsButton?: boolean; // Nueva prop para controlar la visibilidad del botón
 };
 
 export default function PublicationCard({
@@ -28,8 +30,20 @@ export default function PublicationCard({
   author,
   onEdit,
   onDelete,
+  showDetailsButton = true, // Por defecto se muestra
 }: PublicationCardProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+
+  const handleEditClick = () => {
+    if (onEdit) {
+      // Si hay un handler personalizado, lo usamos (para publications_own)
+      onEdit();
+    } else {
+      // Si no, abrimos el modal de detalles de edición
+      setIsEditOpen(true);
+    }
+  };
 
   return (
     <>
@@ -67,7 +81,7 @@ export default function PublicationCard({
           <div className="flex items-center gap-2">
             {onEdit && (
               <button
-                onClick={onEdit}
+                onClick={handleEditClick}
                 className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-xs font-medium transition-colors"
               >
                 <Edit className="w-3 h-3" /> Editar
@@ -83,20 +97,22 @@ export default function PublicationCard({
               </button>
             )}
           </div>
-        </div>
 
-        {/* Botón flotante */}
-          <button
-            onClick={() => setIsOpen(true)}
-            className="absolute bottom-3 right-3 flex items-center gap-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg text-sm font-medium shadow-sm transition-colors"
-          >
-            Ver detalles
-            <ChevronRight className="w-4 h-4" />
-          </button>
+          {/* Botón flotante - solo se muestra si showDetailsButton es true */}
+          {showDetailsButton && (
+            <button
+              onClick={() => setIsDetailsOpen(true)}
+              className="absolute bottom-3 right-3 flex items-center gap-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg text-sm font-medium shadow-sm transition-colors"
+            >
+              Ver detalles
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Modal de detalles */}
-      <Dialog open={isOpen} onClose={() => setIsOpen(false)} className="relative z-50">
+      {/* Modal de detalles (para publications_view) */}
+      <Dialog open={isDetailsOpen} onClose={() => setIsDetailsOpen(false)} className="relative z-50">
         <div className="fixed inset-0 bg-black/40" aria-hidden="true" />
         <div className="fixed inset-0 flex items-center justify-center p-4">
           <Dialog.Panel className="bg-white rounded-xl shadow-lg max-w-lg w-full p-6 space-y-4">
@@ -143,7 +159,7 @@ export default function PublicationCard({
 
             <div className="flex justify-between pt-4">
               <button
-                onClick={() => setIsOpen(false)}
+                onClick={() => setIsDetailsOpen(false)}
                 className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
               >
                 Cerrar
@@ -155,8 +171,89 @@ export default function PublicationCard({
                 Enviar postulación
               </button>
             </div>
+          </Dialog.Panel>
+        </div>
+      </Dialog>
 
+      {/* Modal de edición con todos los detalles (para cuando no hay onEdit personalizado) */}
+      <Dialog open={isEditOpen} onClose={() => setIsEditOpen(false)} className="relative z-50">
+        <div className="fixed inset-0 bg-black/40" aria-hidden="true" />
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <Dialog.Panel className="bg-white rounded-xl shadow-lg max-w-lg w-full p-6 space-y-4">
+            <Dialog.Title className="text-lg font-bold">Detalles de la Publicación</Dialog.Title>
+            
+            <div className="space-y-3 text-sm">
+              <div>
+                <label className="font-medium text-gray-700">Título</label>
+                <p className="text-gray-600 mt-1">{title}</p>
+              </div>
 
+              {author && (
+                <div>
+                  <label className="font-medium text-gray-700">Publicado por</label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <User className="w-4 h-4 text-gray-500" />
+                    <span className="text-gray-600">
+                      <strong>{author.nombre}</strong> ({author.tipoUsuario})
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {category && (
+                <div>
+                  <label className="font-medium text-gray-700">Categoría</label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Briefcase className="w-4 h-4 text-gray-500" />
+                    <span className="text-gray-600">{category}</span>
+                  </div>
+                </div>
+              )}
+
+              {jobType && (
+                <div>
+                  <label className="font-medium text-gray-700">Tipo de trabajo</label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Briefcase className="w-4 h-4 text-gray-500" />
+                    <span className="text-gray-600">{jobType}</span>
+                  </div>
+                </div>
+              )}
+
+              {location && (
+                <div>
+                  <label className="font-medium text-gray-700">Ubicación</label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <MapPin className="w-4 h-4 text-gray-500" />
+                    <span className="text-gray-600">{location}</span>
+                  </div>
+                </div>
+              )}
+
+              {salary && (
+                <div>
+                  <label className="font-medium text-gray-700">Remuneración</label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <DollarSign className="w-4 h-4 text-gray-500" />
+                    <span className="text-gray-600">{salary}</span>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="font-medium text-gray-700">Descripción</label>
+                <p className="text-gray-600 text-sm whitespace-pre-line mt-1">{description}</p>
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-4">
+              <button
+                onClick={() => setIsEditOpen(false)}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+              >
+                Cerrar
+              </button>
+            </div>
           </Dialog.Panel>
         </div>
       </Dialog>

@@ -1,3 +1,4 @@
+//app/publications/publications_own/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -7,6 +8,8 @@ import PublicationCard from "../../../components/PublicationCard";
 import PublicationCardNew from "../../../components/PublicationCardNew";
 import Button from "../../../components/button";
 import { GetPublications } from "./actions";
+import { Dialog } from "@headlessui/react";
+import { MapPin, DollarSign, Briefcase, Tag, Calendar } from "lucide-react";
 
 export default function MisPublicaciones() {
   const [publicaciones, setPublicaciones] = useState<any[]>([]);
@@ -17,12 +20,51 @@ export default function MisPublicaciones() {
   const itemsPerPage = 6;
   const router = useRouter();
 
+  // 🔹 Función para convertir Decimal a número
+  const toNumber = (v: any): number => {
+    if (v === null || v === undefined) return 0;
+    if (typeof v?.toNumber === "function") return v.toNumber();
+    return Number(v);
+  };
+
+  // 🔹 Función para formatear precio en CLP con separadores de miles
+  const formatCLP = (v: any): string => {
+    const n = toNumber(v);
+    if (n === 0) return "";
+    return new Intl.NumberFormat("es-CL", { 
+      style: "currency", 
+      currency: "CLP",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(n);
+  };
+
   // 🔹 Cargar publicaciones desde el server action
   useEffect(() => {
     async function fetchData() {
       try {
         const data = await GetPublications();
-        setPublicaciones(data);
+        
+        // Normalizar datos y convertir Decimals
+        const normalizedData = data.map((pub: any) => {
+          // Convertir todos los posibles campos Decimal
+          const normalized: any = {
+            ...pub,
+            remuneracion: pub.remuneracion ? toNumber(pub.remuneracion) : null,
+          };
+
+          // Si hay campos anidados con Decimals, también convertirlos
+          if (pub.ubicacion && typeof pub.ubicacion === 'object') {
+            normalized.ubicacion = { ...pub.ubicacion };
+          }
+          if (pub.categoria && typeof pub.categoria === 'object') {
+            normalized.categoria = { ...pub.categoria };
+          }
+
+          return normalized;
+        });
+        
+        setPublicaciones(normalizedData);
       } catch (error) {
         console.error("Error al cargar publicaciones:", error);
       }
@@ -57,6 +99,17 @@ export default function MisPublicaciones() {
       prev.map((p) => (p.id === updated.id ? updated : p))
     );
     setEditingPub(null);
+  };
+
+  // 🔹 Formatear fecha
+  const formatDate = (date: any) => {
+    if (!date) return "";
+    const d = new Date(date);
+    return d.toLocaleDateString("es-CL", { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
   };
 
   return (
@@ -122,8 +175,15 @@ export default function MisPublicaciones() {
                 title={pub.titulo}
                 description={pub.descripcion}
                 icon={pub.icono}
+                location={pub.ubicacion?.ciudad ? 
+                  `${pub.ubicacion.ciudad}${pub.ubicacion?.region ? `, ${pub.ubicacion.region}` : ""}` 
+                  : undefined}
+                salary={pub.remuneracion ? formatCLP(pub.remuneracion) : undefined}
+                jobType={pub.tipo}
+                category={pub.categoria?.nombre}
                 onEdit={() => handleEdit(pub)}
                 onDelete={() => handleDelete(pub.id)}
+                showDetailsButton={false}
               />
             ))}
           </div>
@@ -147,42 +207,163 @@ export default function MisPublicaciones() {
             </div>
           )}
 
-          {/* 🔹 Modal de edición */}
+          {/* 🔹 Modal de edición mejorado */}
           {editingPub && (
-            <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-start pt-20 z-50">
-              <div className="bg-white p-6 rounded-xl w-96 shadow-lg">
-                <h2 className="text-xl font-bold mb-4">Editar Publicación</h2>
-                <input
-                  type="text"
-                  className="w-full border p-2 mb-2 rounded"
-                  value={editingPub.titulo}
-                  onChange={(e) =>
-                    setEditingPub({ ...editingPub, titulo: e.target.value })
-                  }
-                />
-                <textarea
-                  className="w-full border p-2 mb-2 rounded"
-                  value={editingPub.descripcion}
-                  onChange={(e) =>
-                    setEditingPub({ ...editingPub, descripcion: e.target.value })
-                  }
-                />
-                <div className="flex justify-end gap-2 mt-4">
-                  <button
-                    className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300"
-                    onClick={() => setEditingPub(null)}
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
-                    onClick={() => saveEdit(editingPub)}
-                  >
-                    Guardar
-                  </button>
-                </div>
+            <Dialog 
+              open={!!editingPub} 
+              onClose={() => setEditingPub(null)} 
+              className="relative z-50"
+            >
+              <div className="fixed inset-0 bg-black/40" aria-hidden="true" />
+              <div className="fixed inset-0 flex items-center justify-center p-4">
+                <Dialog.Panel className="bg-white rounded-xl shadow-lg max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+                  <Dialog.Title className="text-2xl font-bold mb-6 text-gray-800">
+                    Editar Publicación
+                  </Dialog.Title>
+                  
+                  <div className="space-y-5">
+                    {/* Título */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Título
+                      </label>
+                      <input
+                        type="text"
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        value={editingPub.titulo}
+                        onChange={(e) =>
+                          setEditingPub({ ...editingPub, titulo: e.target.value })
+                        }
+                        placeholder="Ej: Desarrollador Full Stack"
+                      />
+                    </div>
+
+                    {/* Descripción */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Descripción
+                      </label>
+                      <textarea
+                        rows={4}
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                        value={editingPub.descripcion}
+                        onChange={(e) =>
+                          setEditingPub({ ...editingPub, descripcion: e.target.value })
+                        }
+                        placeholder="Describe los detalles de la publicación..."
+                      />
+                    </div>
+
+                    {/* Grid de 2 columnas para campos más pequeños */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Categoría */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <Tag className="w-4 h-4 inline mr-1" />
+                          Categoría
+                        </label>
+                        <input
+                          type="text"
+                          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          value={editingPub.categoria?.nombre || ""}
+                          readOnly
+                          placeholder="Sin categoría"
+                        />
+                      </div>
+
+                      {/* Tipo de trabajo */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <Briefcase className="w-4 h-4 inline mr-1" />
+                          Tipo de trabajo
+                        </label>
+                        <input
+                          type="text"
+                          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          value={editingPub.tipo || ""}
+                          readOnly
+                          placeholder="No especificado"
+                        />
+                      </div>
+
+                      {/* Ubicación */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <MapPin className="w-4 h-4 inline mr-1" />
+                          Ubicación
+                        </label>
+                        <input
+                          type="text"
+                          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          value={editingPub.ubicacion?.ciudad ? 
+                            `${editingPub.ubicacion.ciudad}${editingPub.ubicacion?.region ? `, ${editingPub.ubicacion.region}` : ""}` 
+                            : ""}
+                          readOnly
+                          placeholder="Sin ubicación"
+                        />
+                      </div>
+
+                      {/* Remuneración */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <DollarSign className="w-4 h-4 inline mr-1" />
+                          Remuneración
+                        </label>
+                        <input
+                          type="text"
+                          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          value={editingPub.remuneracion ? formatCLP(editingPub.remuneracion) : "No especificada"}
+                          readOnly
+                        />
+                      </div>
+                    </div>
+
+                    {/* Información adicional */}
+                    <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                      <h3 className="font-medium text-gray-700 mb-3">Información adicional</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                        <div className="flex items-center gap-2 text-gray-600">
+                          <Calendar className="w-4 h-4" />
+                          <span>Publicado: {formatDate(editingPub.fechaPublicacion)}</span>
+                        </div>
+                        {editingPub.fechaCierre && (
+                          <div className="flex items-center gap-2 text-gray-600">
+                            <Calendar className="w-4 h-4" />
+                            <span>Cierre: {formatDate(editingPub.fechaCierre)}</span>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2 text-gray-600">
+                          <span className="font-medium">Estado:</span>
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${
+                            editingPub.estado === 'ACTIVA' 
+                              ? 'bg-green-100 text-green-700' 
+                              : 'bg-gray-100 text-gray-700'
+                          }`}>
+                            {editingPub.estado}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Botones de acción */}
+                  <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
+                    <button
+                      className="px-5 py-2.5 rounded-lg bg-gray-200 text-gray-700 font-medium hover:bg-gray-300 transition-colors"
+                      onClick={() => setEditingPub(null)}
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      className="px-5 py-2.5 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors shadow-sm"
+                      onClick={() => saveEdit(editingPub)}
+                    >
+                      Guardar cambios
+                    </button>
+                  </div>
+                </Dialog.Panel>
               </div>
-            </div>
+            </Dialog>
           )}
         </main>
       </div>
