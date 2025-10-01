@@ -86,7 +86,7 @@ export async function registerUser(formData: FormData) {
         region: data.region,
         ciudad: data.ciudad,
         direccion: data.direccion,
-        tipoUsuario: "EMPLEADOR",
+        tipoUsuario: "USUARIO",
       },
       select: {
         id: true,
