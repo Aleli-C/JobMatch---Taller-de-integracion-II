@@ -1,5 +1,9 @@
 // app/chat/[conversationId]/page.tsx
+<<<<<<< HEAD
 
+=======
+"use client";
+>>>>>>> main
 // ====================================================================
 // IMPORTS Y LÓGICA DEL SERVIDOR (No se toca)
 // ====================================================================
@@ -10,7 +14,11 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
 // Componentes Visuales que vamos a usar
+<<<<<<< HEAD
 import ChatSidebar from "@/components/ChatSidebar";
+=======
+import ChatSidebar from "@/components/ChatSideBar";
+>>>>>>> main
 import ChatMain from "@/components/ChatMain";
 import ChatInfoPanel from "@/components/ChatInfoPanel";
 import { useState } from "react";

@@ -5,7 +5,11 @@ import { getSessionUser } from "@/lib/getSessionUser";
 import { getChatsByUserId } from "@/lib/repositories/chatPersistence";
 
 // 1. Importamos el componente visual de la barra lateral
+<<<<<<< HEAD
 import ChatSidebar from "@/components/ChatSidebar";
+=======
+import ChatSidebar from "../../components/ChatSideBar";
+>>>>>>> main
 
 export default async function MisChatsPage() {
   const session = await getSessionUser();

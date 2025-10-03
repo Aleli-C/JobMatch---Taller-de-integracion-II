@@ -1,28 +1,32 @@
 // app/auth/login/actions.ts
-'use server';
-import bcrypt from 'bcryptjs';
-import { prisma } from '../../../lib/prisma';
-import { loginSchema } from '../../../lib/zod/auth';
-import { createSession } from '../../../lib/session';
-import { redirect } from 'next/navigation';
+"use server";
+
+import bcrypt from "bcryptjs";
+import { prisma } from "../../../lib/prisma";
+import { loginSchema } from "../../../lib/zod/auth";
+import { createSession } from "../../../lib/session";
+import { redirect } from "next/navigation";
 
 export type LoginActionState = {
-  ok: boolean
-  message?: string
-  errors?: { email?: string[]; password?: string[]; general?: string[] }
-}
+  ok: boolean;
+  errors?: { correo?: string[]; contrasena?: string[]; general?: string[] };
+};
 
-export async function loginUser( _prev: LoginActionState, formData: FormData) {
+export async function loginUser(_prev: LoginActionState, formData: FormData) {
   const parsed = loginSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
+  if (!parsed.success) return { ok: false, errors: parsed.error.flatten().fieldErrors };
 
   const { correo, contrasena } = parsed.data;
-  const user = await prisma.usuario.findUnique({ where: { correo } });
-  if (!user) return { error: { correo: ['Correo no registrado'] } };
+
+  const user = await prisma.usuario.findUnique({
+    where: { correo },
+    select: { id: true, correo: true, contrasena: true, tipoUsuario: true },
+  });
+  if (!user) return { ok: false, errors: { correo: ["Correo no registrado"] } };
 
   const ok = await bcrypt.compare(contrasena, user.contrasena);
-  if (!ok) return { error: { contraseña: ['Contraseña incorrecta'] } };
+  if (!ok) return { ok: false, errors: { contrasena: ["Credenciales inválidas"] } };
 
-  await createSession({ sub: user.id, correo: user.correo, role: user.tipoUsuario });
-  redirect('/'); // <- lleva al Home
+  await createSession({ sub: String(user.id), correo: user.correo, role: user.tipoUsuario });
+  redirect("/"); // NO try/catch, NO return después. :contentReference[oaicite:1]{index=1}
 }

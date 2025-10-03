@@ -1,46 +1,31 @@
 // lib/session.ts
+import "server-only";
 import { cookies } from "next/headers";
-import { signJWT, verifyJWT } from "./jwt";
-import type { JWTPayload } from "jose";
+import { SignJWT, jwtVerify, type JWTPayload } from "jose";
 
-export type SessionClaims = JWTPayload & {
-  sub: string;                   // <- string por RFC 7519
-  correo: string;
-  role?: "EMPLEADOR" | "EMPLEADO";
-};
+const COOKIE = "authToken";
+const key = () => new TextEncoder().encode(process.env.AUTH_SECRET!);
 
-export type SessionInput = {     // lo que pasa tu app
-  sub: number;                   // id numérico
-  correo: string;
-  role?: "EMPLEADOR" | "EMPLEADO";
-};
+export type SessionClaims = JWTPayload & { sub: string; correo: string; role: string };
 
-export const sessionConfig = {
-  name: "session",
-  options: {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax" as const,
-    path: "/",
-    maxAge: 60 * 60 * 24 * 7,
-  },
-} as const;
+export async function createSession(payload: SessionClaims) {
+  const token = await new SignJWT(payload)
+    .setProtectedHeader({ alg: "HS256", typ: "JWT" })
+    .setIssuedAt()
+    .setExpirationTime("30m")            // ← exp obligatorio
+    .sign(key());
 
-export async function createSession(s: SessionInput) {
-  const payload: SessionClaims = { sub: String(s.sub), correo: s.correo, role: s.role };
-  const token = await signJWT(payload, "7d");
-  const store = await cookies();                 // Next 15: async
-  store.set(sessionConfig.name, token, sessionConfig.options);
+  const store = await cookies();
+  store.set(COOKIE, token, {
+    httpOnly: true, secure: true, sameSite: "lax", path: "/",
+    // sin maxAge → cookie de sesión
+  });
 }
 
-export async function getSession<T extends JWTPayload = SessionClaims>(): Promise<T | null> {
-  const store = await cookies();                 // Next 15: async
-  const token = store.get(sessionConfig.name)?.value;
+export async function getSession(): Promise<SessionClaims | null> {
+  const store = await cookies();
+  const token = store.get(COOKIE)?.value;
   if (!token) return null;
-  return (await verifyJWT<T>(token));
-}
-
-export async function destroySession() {
-  const store = await cookies();                 // Next 15: async
-  store.set(sessionConfig.name, "", { ...sessionConfig.options, maxAge: 0 });
+  try { return (await jwtVerify(token, key())).payload as SessionClaims; }
+  catch { return null; }
 }
