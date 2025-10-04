@@ -26,10 +26,10 @@ export default function Login() {
 
   const handleRegister = () => {
     // Navega a tu ruta de registro
-    window.location.href = "/register";
+    window.location.href = "register";
   };
   const handleForgotPassword = () => {
-    window.location.href = "/forgot-password";
+    window.location.href = "reset";
   };
 
   return (
