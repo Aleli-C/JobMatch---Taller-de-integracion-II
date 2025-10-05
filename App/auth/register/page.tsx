@@ -227,26 +227,6 @@ export default function Register() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header separado con logo y botón de iniciar sesión */}
-      <header className="w-full py-4 px-8 bg-white">
-        <div className="flex items-center justify-between max-w-7xl mx-auto">
-          {/* Logo + JobMatch */}
-          <div className="flex items-center space-x-2">
-            <img src="/JobMatch.png" alt="JobMatch Logo" className="h-8 w-10" />
-            <span className="text-xl font-bold text-blue-600">JobMatch</span>
-          </div>
-
-          {/* Botón Iniciar Sesión */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => router.push("/auth/login")}
-          >
-            Iniciar Sesión
-          </Button>
-        </div>
-      </header>
-
       {/* Contenido principal */}
       <div className="flex justify-center items-start px-4 py-8">
         <div className="w-full max-w-6xl bg-white rounded-2xl shadow-lg overflow-hidden">

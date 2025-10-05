@@ -25,8 +25,12 @@ export default function Login() {
   const [state, formAction] = useActionState(loginUser as any, initialState);
 
   const handleRegister = () => {
-    // Navega a tu ruta de registro
+    // Navega a  registro
     window.location.href = "register";
+  };
+  const handleLogin = () => {
+    // Navega a  login
+    window.location.href = "login";
   };
   const handleForgotPassword = () => {
     window.location.href = "reset";
@@ -34,23 +38,6 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <img
-              src="/JobMatch.png"
-              alt="JobMatch Logo"
-              className="h-10 w-12"
-            />
-            <span className="text-2xl font-bold text-blue-600">JobMatch</span>
-          </div>
-          <Button variant="outline" size="sm" onClick={handleRegister}>
-            Registro
-          </Button>
-        </div>
-      </header>
-
       {/* Contenido Principal */}
       <div className="flex items-center justify-center min-h-[calc(100vh-80px)] p-8">
         <div className="w-full max-w-md">

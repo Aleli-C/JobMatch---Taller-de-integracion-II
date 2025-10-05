@@ -1,6 +1,5 @@
 @import "tailwindcss";
 
-
 /* 🎨 Variables de colores */
 :root {
   --background: #ffffff;
@@ -18,7 +17,7 @@ html.dark {
   --foreground: #f1f5f9;
   --card-bg: #1e293b;
   --card-border: #334155;
-  --btn-bg: #0069c0;   /* mantiene tu azul */
+  --btn-bg: #0069c0; /* mantiene tu azul */
   --btn-text: #ffffff;
   --btn-hover: #0057a3;
 }
@@ -28,4 +27,3 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
-
