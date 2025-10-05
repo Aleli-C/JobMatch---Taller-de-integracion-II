@@ -36,7 +36,7 @@ function MisPublicacionesContent() {
     if (window.confirm("¿Seguro que quieres eliminar esta publicación?")) {
       const updated = publicaciones.filter((p) => p.id !== id);
       saveToStorage(updated);
-      addToast({ type: "DELETE", title: "Publicación eliminada", message: "La publicación ha sido eliminada.", timestamp: new Date() });
+      addToast({ type: "SUCCESS", title: "Publicación eliminada", message: "La publicación ha sido eliminada.", timestamp: new Date() });
     }
   };
 
@@ -44,7 +44,7 @@ function MisPublicacionesContent() {
     const newData = publicaciones.map((p) => (p.id === updated.id ? updated : p));
     saveToStorage(newData);
     setEditingPub(null);
-    addToast({ type: "EDIT", title: "Publicación editada", message: "La publicación se ha actualizado.", timestamp: new Date() });
+    addToast({ type: "POST_UPDATED", title: "Publicación editada", message: "La publicación se ha actualizado.", timestamp: new Date() });
   };
 
   return (

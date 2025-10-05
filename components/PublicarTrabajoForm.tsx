@@ -1,5 +1,17 @@
-import React, { useState } from "react";
+"use client";
+
+import React, { useState, useEffect } from "react";
 import { useToastContext } from "./ToastContext";
+
+interface Categoria {
+  id: number;
+  nombre: string;
+}
+
+interface Ubicacion {
+  id: number;
+  ciudad: string;
+}
 
 const PublicarTrabajoForm: React.FC<{ userId: number }> = ({ userId }) => {
   const { addToast } = useToastContext();
@@ -15,6 +27,23 @@ const PublicarTrabajoForm: React.FC<{ userId: number }> = ({ userId }) => {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [ubicaciones, setUbicaciones] = useState<Ubicacion[]>([]);
+
+  // Cargar meta (categorías y ubicaciones)
+  useEffect(() => {
+    async function fetchMeta() {
+      try {
+        const res = await fetch("/publications/meta");
+        const data = await res.json();
+        setCategorias(data.categorias);
+        setUbicaciones(data.ubicaciones);
+      } catch (err) {
+        console.error("Error cargando meta:", err);
+      }
+    }
+    fetchMeta();
+  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -26,7 +55,8 @@ const PublicarTrabajoForm: React.FC<{ userId: number }> = ({ userId }) => {
   const validate = () => {
     const newErrors: Record<string, string> = {};
     if (!form.titulo.trim()) newErrors.titulo = "El título es obligatorio.";
-    else if (form.titulo.length < 10) newErrors.titulo = "El título debe tener al menos 10 caracteres.";
+    else if (form.titulo.length < 10)
+      newErrors.titulo = "El título debe tener al menos 10 caracteres.";
 
     if (!form.descripcion.trim() || form.descripcion.length < 20)
       newErrors.descripcion = "La descripción debe tener al menos 20 caracteres.";
@@ -42,45 +72,70 @@ const PublicarTrabajoForm: React.FC<{ userId: number }> = ({ userId }) => {
     return newErrors;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const valErrors = validate();
     setErrors(valErrors);
     if (Object.keys(valErrors).length > 0) return;
 
+    // Convierte los campos a número
     const nuevaPub = {
-      id: Date.now(), // id temporal
-      usuarioId: userId,
-      titulo: form.titulo,
-      descripcion: form.descripcion,
-      remuneracion: Number(form.remuneracion),
-      tipo: form.tipo,
-      idCategoria: Number(form.idCategoria),
+      ...form,
       idUbicacion: Number(form.idUbicacion),
-      fechaCierre: form.fechaCierre || null,
+      idCategoria: Number(form.idCategoria),
+      remuneracion: Number(form.remuneracion),
+      fechaCierre: form.fechaCierre
+        ? new Date(form.fechaCierre).toISOString()
+        : null,
     };
 
-    // Guardar en localStorage
-    const publicaciones = JSON.parse(localStorage.getItem("publicaciones") || "[]");
-    localStorage.setItem("publicaciones", JSON.stringify([...publicaciones, nuevaPub]));
+    try {
+      const res = await fetch("/publications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(nuevaPub),
+        credentials: "include", // <-- Esto permite enviar la cookie de sesión
+      });
 
-    addToast({
-      type: "POST_CREATED",
-      title: "Trabajo Publicado",
-      message: "¡Tu oferta de trabajo ha sido publicada exitosamente!",
-      timestamp: new Date(),
-    });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Error al crear publicación");
+      }
 
-    // Limpiar formulario
-    setForm({
-      titulo: "",
-      descripcion: "",
-      remuneracion: "",
-      tipo: "",
-      idCategoria: "",
-      idUbicacion: "",
-      fechaCierre: "",
-    });
+      const createdPub = await res.json();
+
+      addToast({
+        type: "POST_CREATED",
+        title: "Trabajo Publicado",
+        message: "¡Tu oferta de trabajo ha sido publicada exitosamente!",
+        timestamp: new Date(),
+      });
+
+      if (createdPub) {
+        // Guardar en localStorage
+        const publicaciones = JSON.parse(localStorage.getItem("publicaciones") || "[]");
+        publicaciones.push(createdPub);
+        localStorage.setItem("publicaciones", JSON.stringify(publicaciones));
+        // Limpiar formulario
+        setForm({
+          titulo: "",
+          descripcion: "",
+          remuneracion: "",
+          tipo: "",
+          idCategoria: "",
+          idUbicacion: "",
+          fechaCierre: "",
+        });
+      }
+    } catch (err: any) {
+      console.error(err);
+      addToast({
+        type: "ERROR",
+        title: "Error",
+        message: err.message || "Error al crear publicación",
+        timestamp: new Date(),
+      });
+    }
   };
 
   return (
@@ -148,10 +203,9 @@ const PublicarTrabajoForm: React.FC<{ userId: number }> = ({ userId }) => {
             className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-[#0069C0] outline-none"
           >
             <option value="">Selecciona categoría</option>
-            <option value="1">Cuidado del Hogar</option>
-            <option value="2">Delivery</option>
-            <option value="3">Servicio a Domicilio</option>
-            <option value="4">Otro</option>
+            {categorias.map(cat => (
+              <option key={cat.id} value={cat.id}>{cat.nombre}</option>
+            ))}
           </select>
           {errors.idCategoria && <p className="text-red-500 text-sm mt-1">{errors.idCategoria}</p>}
         </div>
@@ -166,9 +220,9 @@ const PublicarTrabajoForm: React.FC<{ userId: number }> = ({ userId }) => {
             className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-[#0069C0] outline-none"
           >
             <option value="">Selecciona ubicación</option>
-            <option value="1">Temuco</option>
-            <option value="2">Santiago</option>
-            <option value="3">Valdivia</option>
+            {ubicaciones.map(ubi => (
+              <option key={ubi.id} value={ubi.id}>{ubi.ciudad}</option>
+            ))}
           </select>
           {errors.idUbicacion && <p className="text-red-500 text-sm mt-1">{errors.idUbicacion}</p>}
         </div>
