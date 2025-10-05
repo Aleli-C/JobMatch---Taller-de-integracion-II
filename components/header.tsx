@@ -11,6 +11,7 @@ const LINKS = [
   { href: "/chat", label: "Mis Chats" },
   { href: "/profile", label: "Perfil" },
   { href: "/favorite", label: "Favoritos" },
+  { href: "/map", label: "Trabajos pendientes" },
 ];
 
 export default function Header() {
