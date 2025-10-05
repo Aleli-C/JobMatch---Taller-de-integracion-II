@@ -25,93 +25,62 @@ const PublicarTrabajoForm: React.FC<{ userId: number }> = ({ userId }) => {
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
+    if (!form.titulo.trim()) newErrors.titulo = "El título es obligatorio.";
+    else if (form.titulo.length < 10) newErrors.titulo = "El título debe tener al menos 10 caracteres.";
 
-    if (!form.titulo.trim()) {
-      newErrors.titulo = "El título es obligatorio.";
-    } else if (form.titulo.length < 10) {
-      newErrors.titulo = "El título debe tener al menos 10 caracteres.";
-    }
-
-    if (!form.descripcion.trim() || form.descripcion.length < 20) {
+    if (!form.descripcion.trim() || form.descripcion.length < 20)
       newErrors.descripcion = "La descripción debe tener al menos 20 caracteres.";
-    }
 
-    if (!form.remuneracion || isNaN(Number(form.remuneracion))) {
+    if (!form.remuneracion || isNaN(Number(form.remuneracion)))
       newErrors.remuneracion = "La remuneración debe ser un número válido.";
-    }
-
-    if (!form.tipo) {
-      newErrors.tipo = "Selecciona un tipo de trabajo.";
-    }
-
-    if (!form.idCategoria) {
-      newErrors.idCategoria = "Selecciona una categoría.";
-    }
-
-    if (!form.idUbicacion) {
-      newErrors.idUbicacion = "Selecciona una ubicación.";
-    }
-
-    if (form.fechaCierre && isNaN(Date.parse(form.fechaCierre))) {
+    if (!form.tipo) newErrors.tipo = "Selecciona un tipo de trabajo.";
+    if (!form.idCategoria) newErrors.idCategoria = "Selecciona una categoría.";
+    if (!form.idUbicacion) newErrors.idUbicacion = "Selecciona una ubicación.";
+    if (form.fechaCierre && isNaN(Date.parse(form.fechaCierre)))
       newErrors.fechaCierre = "Fecha de cierre inválida.";
-    }
 
     return newErrors;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const valErrors = validate();
     setErrors(valErrors);
     if (Object.keys(valErrors).length > 0) return;
 
-    // Crear objeto listo para el backend
-    const payload = {
-      idUsuario: userId,
+    const nuevaPub = {
+      id: Date.now(), // id temporal
+      usuarioId: userId,
       titulo: form.titulo,
       descripcion: form.descripcion,
       remuneracion: Number(form.remuneracion),
-      tipo: form.tipo, // FULLTIME | PARTTIME | FREELANCE
+      tipo: form.tipo,
       idCategoria: Number(form.idCategoria),
       idUbicacion: Number(form.idUbicacion),
       fechaCierre: form.fechaCierre || null,
     };
 
-    try {
-      // Enviar al backend (ajusta la URL a tu API)
-      const response = await fetch("/api/publicaciones", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+    // Guardar en localStorage
+    const publicaciones = JSON.parse(localStorage.getItem("publicaciones") || "[]");
+    localStorage.setItem("publicaciones", JSON.stringify([...publicaciones, nuevaPub]));
 
-      if (!response.ok) throw new Error("Error al crear la publicación");
+    addToast({
+      type: "POST_CREATED",
+      title: "Trabajo Publicado",
+      message: "¡Tu oferta de trabajo ha sido publicada exitosamente!",
+      timestamp: new Date(),
+    });
 
-      addToast({
-        type: "POST_CREATED",
-        title: "Trabajo Publicado",
-        message: "¡Tu oferta de trabajo ha sido publicada exitosamente!",
-        timestamp: new Date(),
-      });
-
-      // Limpiar formulario
-      setForm({
-        titulo: "",
-        descripcion: "",
-        remuneracion: "",
-        tipo: "",
-        idCategoria: "",
-        idUbicacion: "",
-        fechaCierre: "",
-      });
-    } catch (error) {
-      addToast({
-        type: "ERROR",
-        title: "Error",
-        message: "No se pudo crear la publicación. Intenta nuevamente.",
-        timestamp: new Date(),
-      });
-    }
+    // Limpiar formulario
+    setForm({
+      titulo: "",
+      descripcion: "",
+      remuneracion: "",
+      tipo: "",
+      idCategoria: "",
+      idUbicacion: "",
+      fechaCierre: "",
+    });
   };
 
   return (
