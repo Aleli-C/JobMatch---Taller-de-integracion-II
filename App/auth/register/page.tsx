@@ -107,6 +107,24 @@ export default function Register() {
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
 
+  // Calcular fuerza de contraseña
+  const getPasswordStrength = (contrasena: string) => {
+    let strength = 0;
+
+    if (contrasena.length >= 8) strength++;
+    if (contrasena.length >= 12) strength++;
+    if (/(?=.*[a-z])/.test(contrasena)) strength++;
+    if (/(?=.*[A-Z])/.test(contrasena)) strength++;
+    if (/(?=.*\d)/.test(contrasena)) strength++;
+    if (/(?=.*[@$!%*?&#])/.test(contrasena)) strength++;
+
+    if (strength <= 2)
+      return { level: "Débil", color: "bg-red-500", width: "33%" };
+    if (strength <= 4)
+      return { level: "Media", color: "bg-yellow-500", width: "66%" };
+    return { level: "Fuerte", color: "bg-green-500", width: "100%" };
+  };
+
   const formatRut = (value: string): string => {
     const cleaned = value.replace(/[^\dkK]/g, "");
     if (cleaned.length <= 1) return cleaned;
@@ -224,6 +242,10 @@ export default function Register() {
       setIsLoading(false);
     }
   };
+
+  const contrasenaStrength = formData.contrasena
+    ? getPasswordStrength(formData.contrasena)
+    : null;
 
   return (
     <div className="min-h-screen bg-white">
@@ -472,6 +494,35 @@ export default function Register() {
                           : "border-gray-300"
                       }`}
                     />
+
+                    {/* Indicador de fuerza */}
+                    {formData.contrasena && contrasenaStrength && (
+                      <div className="mt-2">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs text-gray-600">
+                            Fuerza de la contraseña:
+                          </span>
+                          <span
+                            className={`text-xs font-medium ${
+                              contrasenaStrength.level === "Débil"
+                                ? "text-red-600"
+                                : contrasenaStrength.level === "Media"
+                                ? "text-yellow-600"
+                                : "text-green-600"
+                            }`}
+                          >
+                            {contrasenaStrength.level}
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className={`h-2 rounded-full transition-all duration-300 ${contrasenaStrength.color}`}
+                            style={{ width: contrasenaStrength.width }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
                     {errors.contrasena && (
                       <p className="text-red-500 text-xs mt-1">
                         {Array.isArray(errors.contrasena)

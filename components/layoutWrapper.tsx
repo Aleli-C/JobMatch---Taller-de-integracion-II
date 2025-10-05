@@ -19,7 +19,7 @@ export default function LayoutWrapper({
   const isAuthRoute = AUTH_ROUTES.some((route) => pathname?.startsWith(route));
 
   if (isAuthRoute) {
-    // Rutas de auth: HeaderAuth (sin Footer)
+    // Rutas de auth: HeaderAuth
     return (
       <>
         <HeaderAuth />
