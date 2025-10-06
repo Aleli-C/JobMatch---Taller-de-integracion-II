@@ -6,7 +6,12 @@ import Header from "./header";
 import HeaderAuth from "./header-auth";
 import Footer from "./footer";
 
-const AUTH_ROUTES = ["/auth/login", "/auth/register", "/auth/reset"];
+const AUTH_ROUTES = [
+  "/auth/login",
+  "/auth/register",
+  "/auth/reset",
+  "/auth/homepublic",
+];
 
 export default function LayoutWrapper({
   children,
