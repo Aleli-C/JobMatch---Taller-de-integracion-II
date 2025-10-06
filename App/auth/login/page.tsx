@@ -4,6 +4,7 @@ import React, { useActionState } from "react";
 import Button from "../../../components/button";
 import { useFormState, useFormStatus } from "react-dom";
 import { loginUser } from "./actions"; // ← ajusta si tu ruta difiere
+import { redirect } from "next/navigation";
 
 type LoginActionState = {
   ok: boolean;
@@ -26,10 +27,10 @@ export default function Login() {
 
   const handleRegister = () => {
     // Navega a tu ruta de registro
-    window.location.href = "/register";
+     redirect("/auth/register");
   };
   const handleForgotPassword = () => {
-    window.location.href = "/forgot-password";
+    redirect("/reset");
   };
 
   return (
