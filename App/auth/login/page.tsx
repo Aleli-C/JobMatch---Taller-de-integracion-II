@@ -4,7 +4,11 @@ import React, { useActionState } from "react";
 import Button from "../../../components/button";
 import { useFormState, useFormStatus } from "react-dom";
 import { loginUser } from "./actions"; // ← ajusta si tu ruta difiere
+<<<<<<< HEAD
 import { redirect } from "next/navigation";
+=======
+import { useRouter } from "next/navigation";
+>>>>>>> 0b80d62a5ee4eaad0a8c1c184155e9bb28fce801
 
 type LoginActionState = {
   ok: boolean;
@@ -23,8 +27,10 @@ function SubmitButton() {
 }
 
 export default function Login() {
+  const router = useRouter();
   const [state, formAction] = useActionState(loginUser as any, initialState);
 
+<<<<<<< HEAD
   const handleRegister = () => {
     // Navega a tu ruta de registro
      redirect("/auth/register");
@@ -33,6 +39,8 @@ export default function Login() {
     redirect("/reset");
   };
 
+=======
+>>>>>>> 0b80d62a5ee4eaad0a8c1c184155e9bb28fce801
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -42,7 +50,7 @@ export default function Login() {
             <img src="/JobMatch.png" alt="JobMatch Logo" className="h-10 w-12" />
             <span className="text-2xl font-bold text-blue-600">JobMatch</span>
           </div>
-          <Button variant="outline" size="sm" onClick={handleRegister}>
+          <Button variant="outline" size="sm" onClick={() => router.push('/auth/register')}>
             Registro
           </Button>
         </div>
@@ -113,14 +121,14 @@ export default function Login() {
             </div>
 
             <div className="text-center mb-4">
-              <button onClick={handleForgotPassword} className="text-sm text-gray-600 hover:text-blue-600">
+              <button onClick={() => router.push('/auth/reset')} className="text-sm text-gray-600 hover:text-blue-600">
                 ¿Olvidaste tu contraseña?
               </button>
             </div>
 
             <p className="text-center text-sm text-gray-600">
               ¿No tienes cuenta aún?{" "}
-              <button onClick={handleRegister} className="text-blue-600 hover:text-blue-800 font-medium">
+              <button onClick={() => router.push('/auth/register')} className="text-blue-600 hover:text-blue-800 font-medium">
                 ¡Regístrate!
               </button>
             </p>
