@@ -3,33 +3,9 @@
 import React, { useState } from "react";
 import { z } from "zod";
 import Button from "../../../components/button";
-import { registerUser } from "./actions";
+import { registerUser as registerAction, type RegisterActionResult } from "./actions";
 import { useRouter } from "next/navigation";
-
-// Validación personalizada para RUT
-const rutRegex = /^[0-9]{1,2}\.[0-9]{3}\.[0-9]{3}-[0-9kK]{1}$/;
-
-const validateRut = (rut: string): boolean => {
-  if (!rutRegex.test(rut)) return false;
-
-  const cleanRut = rut.replace(/\./g, "").replace("-", "");
-  const rutNumber = cleanRut.slice(0, -1);
-  const verifier = cleanRut.slice(-1).toUpperCase();
-
-  let sum = 0;
-  let multiplier = 2;
-
-  for (let i = rutNumber.length - 1; i >= 0; i--) {
-    sum += parseInt(rutNumber[i]) * multiplier;
-    multiplier = multiplier === 7 ? 2 : multiplier + 1;
-  }
-
-  const remainder = sum % 11;
-  const expectedVerifier =
-    remainder === 0 ? "0" : remainder === 1 ? "K" : (11 - remainder).toString();
-
-  return verifier === expectedVerifier;
-};
+import { RegisterInput, registerSchema} from "../../../lib/zod/auth";
 
 // Regiones de Chile
 const regionesChile = [
@@ -51,61 +27,44 @@ const regionesChile = [
   "Magallanes y de la Antártica Chilena",
 ];
 
-// Schema de validación con Zod
-const registerSchema = z
-  .object({
-    rut: z
-      .string()
-      .min(1, "El RUT es requerido")
-      .refine(validateRut, "RUT inválido. Formato: 11.111.111-0"),
-    fullName: z
-      .string()
-      .min(2, "El nombre debe tener al menos 2 caracteres")
-      .max(50, "El nombre no puede exceder 50 caracteres"),
-    email: z.string().email("Por favor ingresa un email válido"),
-    contrasena: z
-      .string()
-      .min(8, "La contraseña debe tener al menos 8 caracteres")
-      .regex(
-        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-        "La contraseña debe contener al menos una mayúscula, una minúscula y un número"
-      ),
-    confirmcontrasena: z.string(),
-    region: z.string().min(1, "Seleccione una región"),
-    ciudad: z
-      .string()
-      .min(2, "La ciudad debe tener al menos 2 caracteres")
-      .max(60, "La ciudad no puede exceder 60 caracteres"),
-    direccion: z
-      .string()
-      .min(5, "La dirección debe tener al menos 5 caracteres")
-      .max(255, "La dirección no puede exceder 255 caracteres"),
-  })
-  .refine((data) => data.contrasena === data.confirmcontrasena, {
-    message: "Las contraseñas no coinciden",
-    path: ["confirmcontrasena"],
-  });
-
-type RegisterForm = z.infer<typeof registerSchema>;
 
 export default function Register() {
   const router = useRouter();
-  const [formData, setFormData] = useState<RegisterForm>({
+  const [formData, setFormData] = useState<RegisterInput>({
     rut: "",
     fullName: "",
     email: "",
     contrasena: "",
     confirmcontrasena: "",
     region: "",
+    comuna: "",   // nuevo
     ciudad: "",
     direccion: "",
   });
 
   const [errors, setErrors] = useState<
-    Partial<Record<keyof RegisterForm | "general", string | string[]>>
+    Partial<Record<keyof RegisterInput | "general", string | string[]>>
   >({});
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+
+  // Calcular fuerza de contraseña
+  const getPasswordStrength = (contrasena: string) => {
+    let strength = 0;
+
+    if (contrasena.length >= 8) strength++;
+    if (contrasena.length >= 12) strength++;
+    if (/(?=.*[a-z])/.test(contrasena)) strength++;
+    if (/(?=.*[A-Z])/.test(contrasena)) strength++;
+    if (/(?=.*\d)/.test(contrasena)) strength++;
+    if (/(?=.*[@$!%*?&#])/.test(contrasena)) strength++;
+
+    if (strength <= 2)
+      return { level: "Débil", color: "bg-red-500", width: "33%" };
+    if (strength <= 4)
+      return { level: "Media", color: "bg-yellow-500", width: "66%" };
+    return { level: "Fuerte", color: "bg-green-500", width: "100%" };
+  };
 
   const formatRut = (value: string): string => {
     const cleaned = value.replace(/[^\dkK]/g, "");
@@ -159,41 +118,42 @@ export default function Register() {
     setSuccessMessage("");
 
     try {
-      // Validar datos con Zod primero (del lado del cliente)
-      const validatedData = registerSchema.parse(formData);
+      const parsed = registerSchema.safeParse(formData);
+      if (!parsed.success) {
+        setErrors(parsed.error.flatten().fieldErrors as any);
+        setIsLoading(false);
+        return;
+      }
+      const validated = parsed.data;
 
-      // Crear FormData para enviar al servidor
+      const fd = new FormData();
+      for (const k of Object.keys(validated) as (keyof RegisterInput)[]) {
+        fd.append(k, String(validated[k] ?? ""));
+      }
       const formDataToSend = new FormData();
-      formDataToSend.append("rut", validatedData.rut);
-      formDataToSend.append("fullName", validatedData.fullName);
-      formDataToSend.append("email", validatedData.email);
-      formDataToSend.append("contrasena", validatedData.contrasena);
+      formDataToSend.append("rut", validated.rut);
+      formDataToSend.append("fullName", validated.fullName);
+      formDataToSend.append("email", validated.email);
+      formDataToSend.append("contrasena", validated.contrasena);
       formDataToSend.append(
         "confirmcontrasena",
-        validatedData.confirmcontrasena
+        validated.confirmcontrasena
       );
-      formDataToSend.append("region", validatedData.region);
-      formDataToSend.append("ciudad", validatedData.ciudad);
-      formDataToSend.append("direccion", validatedData.direccion);
+      formDataToSend.append("region", validated.region);
+      formDataToSend.append("comuna", validated.comuna); // nuevo
+      formDataToSend.append("ciudad", validated.ciudad);
+      formDataToSend.append("direccion", validated.direccion);
 
-      // Llamar a la Server Action
-      const result = await registerUser(formDataToSend);
+      const result = await registerAction(formDataToSend);
 
       if (result.success) {
         setSuccessMessage("¡Cuenta creada exitosamente! Redirigiendo...");
 
         // Limpiar el formulario
         setFormData({
-          rut: "",
-          fullName: "",
-          email: "",
-          contrasena: "",
-          confirmcontrasena: "",
-          region: "",
-          ciudad: "",
-          direccion: "",
+          rut: "", fullName: "", email: "", contrasena: "", confirmcontrasena: "",
+          region: "", comuna: "", ciudad: "", direccion: "",
         });
-
         // Redirigir después de 2 segundos
         setTimeout(() => {
           router.push("/auth/login"); // Ajusta la ruta según tu aplicación
@@ -205,10 +165,10 @@ export default function Register() {
     } catch (error) {
       if (error instanceof z.ZodError) {
         // Formatear errores de Zod
-        const formattedErrors: Partial<Record<keyof RegisterForm, string>> = {};
+        const formattedErrors: Partial<Record<keyof RegisterInput, string>> = {};
         error.issues.forEach((err) => {
           if (err.path[0]) {
-            formattedErrors[err.path[0] as keyof RegisterForm] = err.message;
+            formattedErrors[err.path[0] as keyof RegisterInput] = err.message;
           }
         });
         setErrors(formattedErrors);
@@ -225,28 +185,12 @@ export default function Register() {
     }
   };
 
+  const contrasenaStrength = formData.contrasena
+    ? getPasswordStrength(formData.contrasena)
+    : null;
+
   return (
     <div className="min-h-screen bg-white">
-      {/* Header separado con logo y botón de iniciar sesión */}
-      <header className="w-full py-4 px-8 bg-white">
-        <div className="flex items-center justify-between max-w-7xl mx-auto">
-          {/* Logo + JobMatch */}
-          <div className="flex items-center space-x-2">
-            <img src="/JobMatch.png" alt="JobMatch Logo" className="h-8 w-10" />
-            <span className="text-xl font-bold text-blue-600">JobMatch</span>
-          </div>
-
-          {/* Botón Iniciar Sesión */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => router.push("/auth/login")}
-          >
-            Iniciar Sesión
-          </Button>
-        </div>
-      </header>
-
       {/* Contenido principal */}
       <div className="flex justify-center items-start px-4 py-8">
         <div className="w-full max-w-6xl bg-white rounded-2xl shadow-lg overflow-hidden">
@@ -410,36 +354,46 @@ export default function Register() {
                       </p>
                     )}
                   </div>
-
-                  {/* Ciudad/Comuna */}
-                  <div>
-                    <label
-                      htmlFor="ciudad"
-                      className="block text-sm font-medium text-gray-700 mb-1"
-                    >
-                      Ciudad/Comuna
-                    </label>
-                    <input
-                      type="text"
-                      id="ciudad"
-                      name="ciudad"
-                      value={formData.ciudad}
-                      onChange={handleInputChange}
-                      placeholder="Santiago"
-                      className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
-                        errors.ciudad
-                          ? "border-red-500 focus:ring-red-500"
-                          : "border-gray-300"
-                      }`}
-                    />
-                    {errors.ciudad && (
-                      <p className="text-red-500 text-xs mt-1">
-                        {Array.isArray(errors.ciudad)
-                          ? errors.ciudad.join(", ")
-                          : errors.ciudad}
-                      </p>
-                    )}
-                  </div>
+                  {/*region*/}
+                    <div>
+                      <label htmlFor="comuna" className="block text-sm font-medium text-gray-700 mb-1">Comuna</label>
+                      <input
+                        type="text"
+                        id="comuna"
+                        name="comuna"
+                        value={formData.comuna}
+                        onChange={handleInputChange}
+                        placeholder="Providencia"
+                        className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
+                          errors.comuna ? "border-red-500 focus:ring-red-500" : "border-gray-300"
+                        }`}
+                      />
+                      {errors.comuna && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {Array.isArray(errors.comuna) ? errors.comuna.join(", ") : errors.comuna}
+                        </p>
+                      )}
+                    </div>
+                    {/* Ciudad */}
+                    <div>
+                      <label htmlFor="ciudad" className="block text-sm font-medium text-gray-700 mb-1">Ciudad</label>
+                      <input
+                        type="text"
+                        id="ciudad"
+                        name="ciudad"
+                        value={formData.ciudad}
+                        onChange={handleInputChange}
+                        placeholder="Santiago"
+                        className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
+                          errors.ciudad ? "border-red-500 focus:ring-red-500" : "border-gray-300"
+                        }`}
+                      />
+                      {errors.ciudad && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {Array.isArray(errors.ciudad) ? errors.ciudad.join(", ") : errors.ciudad}
+                        </p>
+                      )}
+                    </div>
 
                   {/* Dirección */}
                   <div>
@@ -492,6 +446,35 @@ export default function Register() {
                           : "border-gray-300"
                       }`}
                     />
+
+                    {/* Indicador de fuerza */}
+                    {formData.contrasena && contrasenaStrength && (
+                      <div className="mt-2">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs text-gray-600">
+                            Fuerza de la contraseña:
+                          </span>
+                          <span
+                            className={`text-xs font-medium ${
+                              contrasenaStrength.level === "Débil"
+                                ? "text-red-600"
+                                : contrasenaStrength.level === "Media"
+                                ? "text-yellow-600"
+                                : "text-green-600"
+                            }`}
+                          >
+                            {contrasenaStrength.level}
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className={`h-2 rounded-full transition-all duration-300 ${contrasenaStrength.color}`}
+                            style={{ width: contrasenaStrength.width }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
                     {errors.contrasena && (
                       <p className="text-red-500 text-xs mt-1">
                         {Array.isArray(errors.contrasena)

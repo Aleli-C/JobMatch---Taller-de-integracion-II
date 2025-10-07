@@ -3,7 +3,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import PublicationCard from "@/components/PublicationCard";
 import FilterBar from "@/components/FilterBar";
-
+import { getSession } from "@/lib/session";
 type SearchParams = Record<string, string | string[] | undefined>;
 
 function clp(v: any) {
@@ -11,16 +11,19 @@ function clp(v: any) {
   return new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" }).format(n);
 }
 
-export default async function Page({ searchParams }: { searchParams: SearchParams }) {
+export default async function Page({ searchParams }: { searchParams: Promise<SearchParams> }) {
   // 1) Datos desde Prisma
+  const session = await getSession();
+  const currentUserId = Number(session?.sub ?? 0);
   const pubs = await prisma.publicacion.findMany({
-    orderBy: { fechaPublicacion: "desc" },
-    include: {
-      categoria: { select: { nombre: true, icono: true } },
-      ubicacion: { select: { ciudad: true, region: true } },
-      usuario:   { select: { id: true, nombre: true, tipoUsuario: true } },
-    },
-  });
+  where: { estado: "ACTIVO" },
+  orderBy: { fechaPublicacion: "desc" },
+  include: {
+    categoria: { select: { nombre: true, icono: true } },
+    ubicacion: { select: { comuna: true, ciudad: true, region: true } }, // ← comuna
+    usuario:   { select: { id: true, nombre: true, tipoUsuario: true } },
+  },
+});
 
   // 2) Normalización (server)
   const items = pubs.map((p) => {
@@ -46,6 +49,7 @@ export default async function Page({ searchParams }: { searchParams: SearchParam
       usuario: p.usuario
         ? { nombre: p.usuario.nombre, tipoUsuario: p.usuario.tipoUsuario }
         : undefined,
+      authorId: p.usuario?.id ?? null, // ← NUEVO
     };
 
   });
@@ -66,12 +70,13 @@ export default async function Page({ searchParams }: { searchParams: SearchParam
   ];
 
   // 4) Lee filtros desde searchParams (GET)
+  const spRaw = await searchParams;     // ← await
   const sp = {
-    search:   String(searchParams.search ?? ""),
-    category: String(searchParams.category ?? ""),
-    location: String(searchParams.location ?? ""),
-    jobType:  String(searchParams.jobType ?? ""),
-    salary:   String(searchParams.salary ?? ""),
+    search:   String(spRaw.search ?? ""),
+    category: String(spRaw.category ?? ""),
+    location: String(spRaw.location ?? ""),
+    jobType:  String(spRaw.jobType  ?? ""),
+    salary:   String(spRaw.salary   ?? ""),
   };
 
   // 5) Filtrado en servidor
@@ -120,6 +125,7 @@ export default async function Page({ searchParams }: { searchParams: SearchParam
             jobType={p.jobType}
             category={p.category}
             author={p.usuario}
+            isOwner={Boolean(p.authorId && p.authorId === currentUserId)}
           />
         ))}
 

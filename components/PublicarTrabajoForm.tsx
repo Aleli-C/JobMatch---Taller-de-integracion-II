@@ -1,19 +1,14 @@
+// components/PublicarTrabajoForm.tsx
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useToastContext } from "./ToastContext";
+import { getMeta, createPublicationAction } from "@/app/publications/publications_new/actions";
 
-interface Categoria {
-  id: number;
-  nombre: string;
-}
+type Categoria = { id: number; nombre: string };
+type Ubicacion = { id: number; ciudad: string | null; comuna: string | null; region: string | null };
 
-interface Ubicacion {
-  id: number;
-  ciudad: string;
-}
-
-const PublicarTrabajoForm: React.FC<{ userId: number }> = ({ userId }) => {
+export default function PublicarTrabajoForm() {
   const { addToast } = useToastContext();
 
   const [form, setForm] = useState({
@@ -21,8 +16,8 @@ const PublicarTrabajoForm: React.FC<{ userId: number }> = ({ userId }) => {
     descripcion: "",
     remuneracion: "",
     tipo: "",
-    idCategoria: "",
-    idUbicacion: "",
+    categoriaId: "",
+    ubicacionId: "",
     fechaCierre: "",
   });
 
@@ -30,113 +25,77 @@ const PublicarTrabajoForm: React.FC<{ userId: number }> = ({ userId }) => {
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [ubicaciones, setUbicaciones] = useState<Ubicacion[]>([]);
 
-  // Cargar meta (categorías y ubicaciones)
   useEffect(() => {
-    async function fetchMeta() {
-      try {
-        const res = await fetch("/publications/meta");
-        const data = await res.json();
-        setCategorias(data.categorias);
-        setUbicaciones(data.ubicaciones);
-      } catch (err) {
-        console.error("Error cargando meta:", err);
-      }
-    }
-    fetchMeta();
+    (async () => {
+      const meta = await getMeta();
+      setCategorias(meta.categorias);
+      setUbicaciones(meta.ubicaciones);
+    })();
   }, []);
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
+    setForm((p) => ({ ...p, [name]: value }));
   };
 
   const validate = () => {
-    const newErrors: Record<string, string> = {};
-    if (!form.titulo.trim()) newErrors.titulo = "El título es obligatorio.";
-    else if (form.titulo.length < 10)
-      newErrors.titulo = "El título debe tener al menos 10 caracteres.";
-
-    if (!form.descripcion.trim() || form.descripcion.length < 20)
-      newErrors.descripcion = "La descripción debe tener al menos 20 caracteres.";
-
-    if (!form.remuneracion || isNaN(Number(form.remuneracion)))
-      newErrors.remuneracion = "La remuneración debe ser un número válido.";
-    if (!form.tipo) newErrors.tipo = "Selecciona un tipo de trabajo.";
-    if (!form.idCategoria) newErrors.idCategoria = "Selecciona una categoría.";
-    if (!form.idUbicacion) newErrors.idUbicacion = "Selecciona una ubicación.";
-    if (form.fechaCierre && isNaN(Date.parse(form.fechaCierre)))
-      newErrors.fechaCierre = "Fecha de cierre inválida.";
-
-    return newErrors;
-  };
+    const err: Record<string, string> = {};
+    if (!form.titulo.trim() || form.titulo.trim().length < 10) err.titulo = "Mínimo 10 caracteres.";
+    if (!form.descripcion.trim() || form.descripcion.trim().length < 20) err.descripcion = "Mínimo 20 caracteres.";
+    if (!form.remuneracion || isNaN(Number(form.remuneracion))) err.remuneracion = "Número válido requerido.";
+    if (!form.tipo) err.tipo = "Selecciona un tipo.";
+    if (!form.categoriaId) err.categoriaId = "Selecciona una categoría.";
+    if (!form.ubicacionId) err.ubicacionId = "Selecciona una ubicación.";
+    if (form.fechaCierre && isNaN(Date.parse(form.fechaCierre))) err.fechaCierre = "Fecha inválida.";
+    return err;
+    };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const valErrors = validate();
-    setErrors(valErrors);
-    if (Object.keys(valErrors).length > 0) return;
+    const valErr = validate();
+    setErrors(valErr);
+    if (Object.keys(valErr).length) return;
 
-    // Convierte los campos a número
-    const nuevaPub = {
-      ...form,
-      idUbicacion: Number(form.idUbicacion),
-      idCategoria: Number(form.idCategoria),
-      remuneracion: Number(form.remuneracion),
-      fechaCierre: form.fechaCierre
-        ? new Date(form.fechaCierre).toISOString()
-        : null,
-    };
+    const fd = new FormData();
+    fd.set("titulo", form.titulo);
+    fd.set("descripcion", form.descripcion);
+    fd.set("remuneracion", form.remuneracion);
+    fd.set("tipo", form.tipo);
+    fd.set("categoriaId", form.categoriaId);
+    fd.set("ubicacionId", form.ubicacionId);
+    if (form.fechaCierre) fd.set("fechaCierre", form.fechaCierre);
 
-    try {
-      const res = await fetch("/publications", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(nuevaPub),
-        credentials: "include", // <-- Esto permite enviar la cookie de sesión
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Error al crear publicación");
-      }
-
-      const createdPub = await res.json();
-
-      addToast({
-        type: "POST_CREATED",
-        title: "Trabajo Publicado",
-        message: "¡Tu oferta de trabajo ha sido publicada exitosamente!",
-        timestamp: new Date(),
-      });
-
-      if (createdPub) {
-        // Guardar en localStorage
-        const publicaciones = JSON.parse(localStorage.getItem("publicaciones") || "[]");
-        publicaciones.push(createdPub);
-        localStorage.setItem("publicaciones", JSON.stringify(publicaciones));
-        // Limpiar formulario
-        setForm({
-          titulo: "",
-          descripcion: "",
-          remuneracion: "",
-          tipo: "",
-          idCategoria: "",
-          idUbicacion: "",
-          fechaCierre: "",
-        });
-      }
-    } catch (err: any) {
-      console.error(err);
+    const res = await createPublicationAction(fd);
+    if (!res.ok) {
       addToast({
         type: "ERROR",
         title: "Error",
-        message: err.message || "Error al crear publicación",
+        message: res.error || "Error al crear la publicación",
         timestamp: new Date(),
       });
+      return;
     }
+
+    addToast({
+      type: "POST_CREATED",
+      title: "Trabajo Publicado",
+      message: "¡Tu oferta fue publicada exitosamente!",
+      timestamp: new Date(),
+    });
+
+    setForm({
+      titulo: "",
+      descripcion: "",
+      remuneracion: "",
+      tipo: "",
+      categoriaId: "",
+      ubicacionId: "",
+      fechaCierre: "",
+    });
   };
+
+  const labelUbicacion = (u: Ubicacion) =>
+    [u.comuna, u.ciudad, u.region].filter(Boolean).join(", ") || "—";
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-12">
@@ -144,10 +103,7 @@ const PublicarTrabajoForm: React.FC<{ userId: number }> = ({ userId }) => {
         Publica un Nuevo Trabajo
       </h1>
 
-      <form
-        onSubmit={handleSubmit}
-        className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white p-8 rounded-2xl shadow-lg border border-gray-200"
-      >
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white p-8 rounded-2xl shadow-lg border border-gray-200">
         {/* Título */}
         <div className="md:col-span-2">
           <label className="block text-gray-700 font-semibold mb-2">Título del Trabajo</label>
@@ -187,7 +143,7 @@ const PublicarTrabajoForm: React.FC<{ userId: number }> = ({ userId }) => {
             value={form.remuneracion}
             onChange={handleChange}
             type="number"
-            placeholder="Ej. 15000"
+            placeholder="Ej. 150000"
             className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-[#0069C0] outline-none"
           />
           {errors.remuneracion && <p className="text-red-500 text-sm mt-1">{errors.remuneracion}</p>}
@@ -197,37 +153,37 @@ const PublicarTrabajoForm: React.FC<{ userId: number }> = ({ userId }) => {
         <div>
           <label className="block text-gray-700 font-semibold mb-2">Categoría</label>
           <select
-            name="idCategoria"
-            value={form.idCategoria}
+            name="categoriaId"
+            value={form.categoriaId}
             onChange={handleChange}
             className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-[#0069C0] outline-none"
           >
             <option value="">Selecciona categoría</option>
-            {categorias.map(cat => (
-              <option key={cat.id} value={cat.id}>{cat.nombre}</option>
+            {categorias.map((c) => (
+              <option key={c.id} value={c.id}>{c.nombre}</option>
             ))}
           </select>
-          {errors.idCategoria && <p className="text-red-500 text-sm mt-1">{errors.idCategoria}</p>}
+          {errors.categoriaId && <p className="text-red-500 text-sm mt-1">{errors.categoriaId}</p>}
         </div>
 
         {/* Ubicación */}
         <div>
           <label className="block text-gray-700 font-semibold mb-2">Ubicación</label>
           <select
-            name="idUbicacion"
-            value={form.idUbicacion}
+            name="ubicacionId"
+            value={form.ubicacionId}
             onChange={handleChange}
             className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-[#0069C0] outline-none"
           >
             <option value="">Selecciona ubicación</option>
-            {ubicaciones.map(ubi => (
-              <option key={ubi.id} value={ubi.id}>{ubi.ciudad}</option>
+            {ubicaciones.map((u) => (
+              <option key={u.id} value={u.id}>{labelUbicacion(u)}</option>
             ))}
           </select>
-          {errors.idUbicacion && <p className="text-red-500 text-sm mt-1">{errors.idUbicacion}</p>}
+          {errors.ubicacionId && <p className="text-red-500 text-sm mt-1">{errors.ubicacionId}</p>}
         </div>
 
-        {/* Fecha de cierre */}
+        {/* Fecha de cierre (opcional) */}
         <div>
           <label className="block text-gray-700 font-semibold mb-2">Fecha de Cierre (opcional)</label>
           <input
@@ -256,16 +212,11 @@ const PublicarTrabajoForm: React.FC<{ userId: number }> = ({ userId }) => {
 
         {/* Botón */}
         <div className="md:col-span-2 flex justify-center">
-          <button
-            type="submit"
-            className="bg-[#0069C0] text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
-          >
+          <button type="submit" className="bg-[#0069C0] text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition">
             Publicar
           </button>
         </div>
       </form>
     </div>
   );
-};
-
-export default PublicarTrabajoForm;
+}

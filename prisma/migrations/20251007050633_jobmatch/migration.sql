@@ -5,10 +5,11 @@ CREATE TABLE `usuarios` (
     `nombre` VARCHAR(100) NOT NULL,
     `correo` VARCHAR(255) NOT NULL,
     `contrasena` VARCHAR(255) NOT NULL,
-    `tipo_usuario` ENUM('EMPLEADOR', 'EMPLEADO') NOT NULL,
+    `tipo_usuario` ENUM('USUARIO', 'ADMIN') NOT NULL,
     `region` VARCHAR(50) NOT NULL,
     `ciudad` VARCHAR(60) NOT NULL,
     `direccion` VARCHAR(255) NOT NULL,
+    `ubicacion_id` INTEGER NULL,
 
     UNIQUE INDEX `usuarios_rut_key`(`rut`),
     UNIQUE INDEX `usuarios_correo_key`(`correo`),
@@ -225,6 +226,9 @@ CREATE TABLE `respuestas_foro` (
     INDEX `respuestas_foro_fecha_idx`(`fecha`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- AddForeignKey
+ALTER TABLE `usuarios` ADD CONSTRAINT `usuarios_ubicacion_id_fkey` FOREIGN KEY (`ubicacion_id`) REFERENCES `ubicaciones`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `password_reset_tokens` ADD CONSTRAINT `password_reset_tokens_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `usuarios`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;

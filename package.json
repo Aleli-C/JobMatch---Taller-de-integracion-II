@@ -29,7 +29,8 @@
   },
   "homepage": "https://github.com/Aleli-C/JobMatch---Taller-de-integracion-II#readme",
   "dependencies": {
-    "@prisma/client": "^6.16.2",
+    "@headlessui/react": "^2.2.9",
+    "@prisma/client": "^6.16.3",
     "bcryptjs": "^3.0.2",
     "jose": "^6.1.0",
     "lucide-react": "^0.544.0",
@@ -45,7 +46,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.12",
     "@types/bcryptjs": "^2.4.6",
-    "@types/node": "24.3.0",
+    "@types/node": "^24.3.0",
     "@types/nodemailer": "^7.0.1",
     "@types/react": "^19.1.13",
     "@types/react-dom": "^19.1.9",

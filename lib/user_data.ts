@@ -1,47 +1,42 @@
-// user_data.ts
+// lib/user_data.ts
+'use server';
 
-/**
- * Define la estructura de datos para un perfil de usuario.
- * NOTA: Esta interfaz debe coincidir con la estructura de tu base de datos real.
- */
-export interface User {
-  id: string;
+import { prisma } from '@/lib/prisma';           // tu singleton de Prisma
+import { getSession } from '@/lib/session';
+import type { TipoUsuario } from '@prisma/client';
+
+export type User = {
+  id: number;
+  rut: string;
   nombre: string;
-  descripcion: string;
-  imagenUrl: string;
-  calificacion: number;
-  conteoResenas: number;
-  habilidades: string[];
   correo: string;
-  telefono: string;
+  region: string;
+  ciudad: string;
+  direccion: string;
+  tipoUsuario: TipoUsuario;
+  comuna: string | null; // <- agregado
+};
+
+export async function getCurrentUser(): Promise<User> {
+  const s = await getSession();
+  if (!s?.sub) throw new Error('not authenticated');
+  const id = Number(s.sub);
+  if (Number.isNaN(id)) throw new Error('invalid id');
+
+  const u = await prisma.usuario.findUnique({
+    where: { id },
+    select: {
+      id: true, rut: true, nombre: true, correo: true,
+      region: true, ciudad: true, direccion: true, tipoUsuario: true,
+      // requiere relación Usuario -> Ubicacion (ubicacionId)
+      ubicacion: { select: { comuna: true } },
+    },
+  });
+  if (!u) throw new Error('user not found');
+
+  return {
+    id: u.id, rut: u.rut, nombre: u.nombre, correo: u.correo,
+    region: u.region, ciudad: u.ciudad, direccion: u.direccion, tipoUsuario: u.tipoUsuario,
+    comuna: u.ubicacion?.comuna ?? null,
+  };
 }
-
-// Datos simulados para Juan Gutierrez
-const mockUser: User = {
-  id: 'user-123',
-  nombre: 'Juan Gutierrez',
-  descripcion:
-    'Soy un profesional con 5 años de experiencia en diseño gráfico y multimedia. Busco oportunidades para proyectos freelance de branding e ilustración. Ofrezco servicios de creación de logos, diseño de empaques y animaciones 2D.',
-  imagenUrl:
-    'https://cdn-icons-png.flaticon.com/512/1361/1361728.png',
-  calificacion: 4.8,
-  conteoResenas: 5,
-  habilidades: ['Desarrollo Web', 'Diseño Gráfico', 'Marketing Digital', 'Ilustración'],
-  correo: 'jgutierrez@gmail.com',
-  telefono: '+56 9 2874 1287',
-};
-
-/**
- * Función asíncrona simulada para obtener los datos de un usuario.
- * @param userId - El ID del usuario a buscar (actualmente ignorado en el mock).
- * @returns Una promesa que resuelve con los datos del usuario.
- */
-export const getUser = async (userId: string): Promise<User> => {
-  // Simular un retraso de red de 500ms
-  await new Promise(resolve => setTimeout(resolve, 500)); 
-
-  // En un entorno real, aquí harías una llamada a la API o a Firestore.
-  // const userDoc = await getDoc(doc(db, "users", userId));
-  
-  return mockUser; 
-};

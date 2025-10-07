@@ -1,102 +1,144 @@
+// lib/repositories/chatPersistence.ts
+import "server-only";
 import { prisma } from "@/lib/prisma";
-import { Mensaje, Chat } from "@prisma/client";
 
-interface NewMessageData {
+//Modelos simplificados solo con los campos necesarios
+// para las operaciones de chat
+export type UsuarioLigero = {
+  id: number;
+  nombre: string | null;
+  correo: string | null;
+  perfil?: {
+    foto: string | null;
+    experiencia: string | null;
+  } | null;
+};
+
+export type MensajeDb = {
+  contenido: string;
+  remitenteId: number;
+  enviadoEn: Date;
+};
+
+export type ChatDb = {
+  id: number;
+  creadoEn: Date;
+  usuario1Id: number;
+  usuario2Id: number;
+  usuario1: UsuarioLigero;
+  usuario2: UsuarioLigero;
+  mensajes: MensajeDb[];
+};
+
+/**
+ * Obtener todos los chats donde participa un usuario
+ */
+export async function getChatsByUserId(userId: number): Promise<ChatDb[]> {
+  return prisma.chat.findMany({
+    where: {
+      OR: [{ usuario1Id: userId }, { usuario2Id: userId }],
+    },
+    include: {
+      usuario1: {
+        select: {
+          id: true,
+          nombre: true,
+          correo: true,
+          perfil: { select: { foto: true, experiencia: true } },
+        },
+      },
+      usuario2: {
+        select: {
+          id: true,
+          nombre: true,
+          correo: true,
+          perfil: { select: { foto: true, experiencia: true } },
+        },
+      },
+      mensajes: {
+        orderBy: { enviadoEn: "desc" },
+        take: 1, // solo el último mensaje
+        select: { contenido: true, remitenteId: true, enviadoEn: true },
+      },
+    },
+    orderBy: {
+      creadoEn: "desc", // no tienes updatedAt en tu esquema
+    },
+  });
+}
+
+/**
+ * 🔹 Obtener todos los mensajes de un chat
+ */
+export async function getMessagesByChatId(chatId: number): Promise<MensajeDb[]> {
+  return prisma.mensaje.findMany({
+    where: { chatId },
+    orderBy: { enviadoEn: "asc" },
+    select: { contenido: true, remitenteId: true, enviadoEn: true },
+  });
+}
+
+/**
+ * 🔹 Buscar un chat existente entre dos usuarios o crearlo
+ */
+export async function findOrCreateChat(usuarioAId: number, usuarioBId: number) {
+  const [minId, maxId] =
+    usuarioAId < usuarioBId ? [usuarioAId, usuarioBId] : [usuarioBId, usuarioAId];
+
+  const existente = await prisma.chat.findFirst({
+    where: { usuario1Id: minId, usuario2Id: maxId },
+    select: { id: true },
+  });
+
+  if (existente) return existente;
+
+  return prisma.chat.create({
+    data: { usuario1Id: minId, usuario2Id: maxId },
+    select: { id: true },
+  });
+}
+
+/**
+ * 🔹 Guardar mensaje en la base de datos
+ */
+export async function saveMessage(args: {
   chatId: number;
   remitenteId: number;
   destinatarioId: number;
   contenido: string;
+}) {
+  const { chatId, remitenteId, destinatarioId, contenido } = args;
+
+  await prisma.mensaje.create({
+    data: { chatId, remitenteId, destinatarioId, contenido },
+  });
 }
 
-/**
- * Guarda un nuevo mensaje en la base de datos.
- */
-export async function saveMessage(data: NewMessageData): Promise<Mensaje> {
-  try {
-    return await prisma.mensaje.create({
-      data: {
-        chatId: data.chatId,
-        remitenteId: data.remitenteId,
-        destinatarioId: data.destinatarioId,
-        contenido: data.contenido,
-      },
-    });
-  } catch (error) {
-    console.error("Error al guardar el mensaje:", error);
-    throw new Error("No se pudo guardar el mensaje.");
-  }
-}
-
-/**
- * Obtiene todos los mensajes de un chat específico, ordenados por fecha de envío.
- */
-export async function getMessagesByChatId(chatId: number): Promise<Mensaje[]> {
-  try {
-    return await prisma.mensaje.findMany({
-      where: { chatId },
-      orderBy: { enviadoEn: "asc" },
-      include: {
-        remitente: {
-          select: { id: true, nombre: true },
+// Obtener un chat completo (usuarios + todos los mensajes)
+export async function getChatWithUsersAndMessages(chatId: number) {
+  return prisma.chat.findUnique({
+    where: { id: chatId },
+    include: {
+      usuario1: {
+        select: {
+          id: true,
+          nombre: true,
+          correo: true,
+          perfil: { select: { foto: true, experiencia: true } },
         },
       },
-    });
-  } catch (error) {
-    console.error(`Error al obtener mensajes del chat ${chatId}:`, error);
-    throw new Error("No se pudieron obtener los mensajes.");
-  }
-}
-
-/**
- * Obtiene todos los chats en los que participa un usuario.
- */
-export async function getChatsByUserId(userId: number): Promise<Chat[]> {
-  try {
-    return await prisma.chat.findMany({
-      where: {
-        OR: [{ usuario1Id: userId }, { usuario2Id: userId }],
-      },
-      include: {
-        usuario1: { select: { id: true, nombre: true } },
-        usuario2: { select: { id: true, nombre: true } },
-        mensajes: {
-          orderBy: { enviadoEn: "desc" },
-          take: 1, // último mensaje
+      usuario2: {
+        select: {
+          id: true,
+          nombre: true,
+          correo: true,
+          perfil: { select: { foto: true, experiencia: true } },
         },
       },
-    });
-  } catch (error) {
-    console.error(`Error al obtener chats del usuario ${userId}:`, error);
-    throw new Error("No se pudieron obtener los chats.");
-  }
-}
-
-/**
- * Busca un chat existente entre dos usuarios o crea uno nuevo si no existe.
- */
-export async function findOrCreateChat(userId1: number, userId2: number): Promise<Chat> {
-  try {
-    let chat = await prisma.chat.findFirst({
-      where: {
-        OR: [
-          { usuario1Id: userId1, usuario2Id: userId2 },
-          { usuario1Id: userId2, usuario2Id: userId1 },
-        ],
+      mensajes: {
+        orderBy: { enviadoEn: "asc" },
+        select: { contenido: true, remitenteId: true, enviadoEn: true },
       },
-    });
-
-    if (!chat) {
-      chat = await prisma.chat.create({
-        data: {
-          usuario1Id: userId1,
-          usuario2Id: userId2,
-        },
-      });
-    }
-
-    return chat;
-  } catch (error) {
-    console.error("Error al buscar o crear el chat:", error);
-    throw new Error("No se pudo iniciar el chat.");
-  }
+    },
+  });
 }

@@ -14,7 +14,8 @@ export type LoginActionState = {
 
 export async function loginUser(_prev: LoginActionState, formData: FormData) {
   const parsed = loginSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { ok: false, errors: parsed.error.flatten().fieldErrors };
+  if (!parsed.success)
+    return { ok: false, errors: parsed.error.flatten().fieldErrors };
 
   const { correo, contrasena } = parsed.data;
 
@@ -25,8 +26,13 @@ export async function loginUser(_prev: LoginActionState, formData: FormData) {
   if (!user) return { ok: false, errors: { correo: ["Correo no registrado"] } };
 
   const ok = await bcrypt.compare(contrasena, user.contrasena);
-  if (!ok) return { ok: false, errors: { contrasena: ["Credenciales inválidas"] } };
+  if (!ok)
+    return { ok: false, errors: { contrasena: ["Credenciales inválidas"] } };
 
-  await createSession({ sub: String(user.id), correo: user.correo, role: user.tipoUsuario });
+  await createSession({
+    sub: String(user.id),
+    correo: user.correo,
+    role: user.tipoUsuario,
+  });
   redirect("/"); // NO try/catch, NO return después. :contentReference[oaicite:1]{index=1}
 }

@@ -1,135 +1,169 @@
 // app/chat/[conversationId]/page.tsx
-"use client";
-// ====================================================================
-// IMPORTS Y LÓGICA DEL SERVIDOR (No se toca)
-// ====================================================================
-import { getSessionUser } from "@/lib/getSessionUser";
 import { redirect } from "next/navigation";
-import { getChatsByUserId, saveMessage } from "@/lib/repositories/chatPersistence";
-import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-
-// Componentes Visuales que vamos a usar
+import { getSession } from "@/lib/session";                 // ← usa getSession
+import {
+  getChatsByUserId,
+  getMessagesByChatId,
+  saveMessage,
+} from "@/lib/repositories/chatPersistence";
 import ChatSidebar from "@/components/ChatSideBar";
 import ChatMain from "@/components/ChatMain";
 import ChatInfoPanel from "@/components/ChatInfoPanel";
-import { useState } from "react";
 
-// La Server Action para enviar mensajes se mantiene intacta
-async function handleSendMessage(formData: FormData) {
-  "use server";
+// ===== Tipos que esperan tus componentes de UI =====
+type UIMessage = { text: string; senderId: string; time: string };
+type UIChatUser = { name: string; about: string; contact: string; avatar: string };
+type UIChat = { id: string; user: UIChatUser; messages: UIMessage[] };
 
-  const contenido = formData.get("contenido")?.toString();
-  const chatId = Number(formData.get("chatId"));
-  const remitenteId = Number(formData.get("remitenteId"));
-  const destinatarioId = Number(formData.get("destinatarioId"));
+type PageProps = { params: { conversationId: string } };
 
-  if (!contenido?.trim()) return;
+// ===== Server Component =====
+export default async function ChatPage({ params }: PageProps) {
+  const session = await getSession();
+  if (!session) redirect("/auth/login");
 
-  await saveMessage({ chatId, remitenteId, destinatarioId, contenido });
+  const userId = Number(session.sub);                        // ← id desde sub
+  if (!Number.isInteger(userId)) redirect("/auth/login");
 
-  revalidatePath(`/chat/${chatId}`);
+  const chatId = Number(params.conversationId);
+  if (!Number.isFinite(chatId)) redirect("/chat");
+
+  // 1) Traemos todos los chats del usuario (para el sidebar)
+  const chatsDb = await getChatsByUserId(userId);
+
+  // 2) Buscamos el chat activo
+  const activeDb = chatsDb.find((c: any) => c.id === chatId);
+  if (!activeDb) redirect("/chat"); // seguridad
+
+  // 3) Determinamos el otro usuario
+  const otherDb = activeDb.usuario1Id === userId ? activeDb.usuario2 : activeDb.usuario1;
+  const destinatarioId: number = otherDb.id;
+
+  // 4) Traemos todos los mensajes de este chat
+  const messagesDb = await getMessagesByChatId(chatId);
+
+  // 5) Adaptamos datos para Sidebar
+  const sidebarChats: UIChat[] = chatsDb.map((c: any) => {
+    const other = c.usuario1Id === userId ? c.usuario2 : c.usuario1;
+    const last = c.mensajes?.[0];
+    return {
+      id: String(c.id),
+      user: {
+        name: other?.nombre ?? "Usuario",
+        about: other?.perfil?.experiencia ?? "",
+        contact: other?.correo ?? "",
+        avatar: other?.perfil?.foto ?? "/avatar-placeholder.png",
+      },
+      messages: last
+        ? [
+            {
+              text: last.contenido,
+              senderId: String(last.remitenteId),
+              time: new Date(last.enviadoEn).toLocaleTimeString("es-CL", {
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
+            },
+          ]
+        : [],
+    };
+  });
+
+  // 6) Adaptamos el chat activo
+  const activeChat: UIChat = {
+    id: String(activeDb.id),
+    user: {
+      name: otherDb?.nombre ?? "Usuario",
+      about: otherDb?.perfil?.experiencia ?? "",
+      contact: otherDb?.correo ?? "",
+      avatar: otherDb?.perfil?.foto ?? "/avatar-placeholder.png",
+    },
+    messages: messagesDb.map((m: any) => ({
+      text: m.contenido,
+      senderId: String(m.remitenteId),
+      time: new Date(m.enviadoEn).toLocaleTimeString("es-CL", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    })),
+  };
+
+  // 7) Server Action para enviar mensaje
+  async function sendMessageAction(formData: FormData) {
+    "use server";
+    const text = String(formData.get("text") ?? "");
+    if (!text.trim()) return;
+
+    await saveMessage({
+      chatId,
+      remitenteId: userId,                                  // ← usa userId
+      destinatarioId,
+      contenido: text,
+    });
+
+    revalidatePath(`/chat/${chatId}`);
+  }
+
+  return (
+    <ChatView
+      allChats={sidebarChats}
+      activeChat={activeChat}
+      sendMessageAction={sendMessageAction}
+    />
+  );
 }
 
+// ===== Client Wrapper (maneja onSendMessage / UI interactiva) =====
+function ChatView({
+  allChats,
+  activeChat,
+  sendMessageAction,
+}: {
+  allChats: UIChat[];
+  activeChat: UIChat;
+  sendMessageAction: (formData: FormData) => Promise<void>;
+}) {
+  "use client";
 
-// ====================================================================
-// COMPONENTE DE CLIENTE PARA MANEJAR LA UI INTERACTIVA
-// ====================================================================
-
-function ChatView({ session, allChats, activeChat, destinatarioId }: { session: any, allChats: any[], activeChat: any, destinatarioId: number }) {
-  'use client'; // Marcamos este componente como de cliente
+  const { useRouter } = require("next/navigation");
+  const { useRef, useState } = require("react") as typeof import("react");
+  const router = useRouter();
 
   const [isInfoPanelVisible, setIsInfoPanelVisible] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const hiddenTextRef = useRef<HTMLInputElement>(null);
 
-  // Adaptamos los datos para que los componentes visuales los entiendan
-  const otherUser = activeChat.usuario1.id === session.id ? activeChat.usuario2 : activeChat.usuario1;
-
-  const adaptedActiveChat = {
-    id: activeChat.id.toString(),
-    user: {
-      name: otherUser.nombre,
-      about: otherUser.sobreMi || 'Sin información de perfil.',
-      contact: otherUser.email || 'Contacto no disponible.',
-      avatar: otherUser.nombre.substring(0, 2).toUpperCase(),
-    },
-    messages: activeChat.mensajes.map((m: any) => ({
-      text: m.contenido,
-      senderId: m.remitenteId === session.id ? 'me' : otherUser.id.toString(),
-      time: new Date(m.enviadoEn).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }),
-    }))
+  const onSendMessageClient = (text: string) => {
+    if (!formRef.current || !hiddenTextRef.current) return;
+    hiddenTextRef.current.value = text;
+    formRef.current.requestSubmit();
   };
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-100 dark:bg-gray-900">
-      <ChatSidebar chats={allChats} session={session} activeChatId={activeChat.id} />
-      
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Envolvemos el ChatMain en el formulario para que la Server Action funcione */}
-        <form action={handleSendMessage} className="flex-1 flex flex-col overflow-hidden">
-          {/* Inputs ocultos necesarios para la Server Action */}
-          <input type="hidden" name="chatId" value={activeChat.id} />
-          <input type="hidden" name="remitenteId" value={session.id} />
-          <input type="hidden" name="destinatarioId" value={destinatarioId} />
+      <ChatSidebar
+        chats={allChats}
+        activeChatId={activeChat?.id ?? null}
+        onSelectChat={(id) => router.push(`/chat/${id}`)}
+      />
 
-          {/* ChatMain ahora vive dentro del form y se encarga de la UI */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <form ref={formRef} action={sendMessageAction} className="flex-1 flex flex-col">
+          <input ref={hiddenTextRef} type="hidden" name="text" />
           <ChatMain
-            activeChat={adaptedActiveChat}
-            onToggleInfoPanel={() => setIsInfoPanelVisible(!isInfoPanelVisible)}
-            // Ya no necesita onSendMessage, el form se encarga de eso
+            activeChat={activeChat}
+            onSendMessage={onSendMessageClient}
+            onToggleInfoPanel={() => setIsInfoPanelVisible((v: boolean) => !v)}
           />
         </form>
       </div>
-      
-      <ChatInfoPanel 
-        user={adaptedActiveChat.user}
+
+      <ChatInfoPanel
+        user={activeChat?.user}
         isVisible={isInfoPanelVisible}
         onClose={() => setIsInfoPanelVisible(false)}
       />
     </div>
-  );
-}
-
-
-// ====================================================================
-// COMPONENTE DE SERVIDOR (Punto de entrada)
-// ====================================================================
-
-export default async function ChatPage({ params }: { params: { conversationId: string } }) {
-  const session = await getSessionUser();
-  if (!session) redirect("/auth/login");
-
-  const chatId = Number(params.conversationId);
-
-  // 1. Obtenemos TODOS los chats del usuario para la barra lateral
-  const allChats = await getChatsByUserId(session.id);
-
-  // 2. Obtenemos el chat ACTIVO con todos sus detalles
-  const activeChat = await prisma.chat.findUnique({
-    where: { id: chatId, OR: [{ usuario1Id: session.id }, { usuario2Id: session.id }] },
-    include: {
-      usuario1: true,
-      usuario2: true,
-      mensajes: { orderBy: { enviadoEn: "asc" } },
-    },
-  });
-
-  // Si el chat no existe o el usuario no pertenece a él, lo mandamos a la página principal de chats
-  if (!activeChat) {
-    return redirect("/chat");
-  }
-
-  // 3. Calculamos el destinatario (lógica que ya tenías)
-  const destinatarioId = activeChat.usuario1.id === session.id 
-    ? activeChat.usuario2.id 
-    : activeChat.usuario1.id;
-
-  // 4. Renderizamos el componente de cliente pasándole todos los datos necesarios
-  return (
-    <ChatView 
-      session={session}
-      allChats={allChats}
-      activeChat={activeChat}
-      destinatarioId={destinatarioId}
-    />
   );
 }

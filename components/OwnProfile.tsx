@@ -4,6 +4,7 @@
 
 import React from 'react';
 // Importamos los dos componentes hijos. La ruta se ajusta sin la extensión para la compilación.
+import ProfileSidebar from './ProfileSidebar';
 import UsuarioProfileAside from './UsuarioProfileAside'; 
 import UsuarioProfileTabs from './UsuarioProfileTabs'; 
 // ELIMINAMOS la importación innecesaria de UserProvider y MockUser desde '../app/profile/page'
@@ -16,10 +17,10 @@ import UsuarioProfileTabs from './UsuarioProfileTabs';
  * en 'app/profile/page.tsx' (el componente padre).
  */
 export default function OwnProfile() {
-  return (
-    // ELIMINAMOS el envoltorio de <UserProvider> aquí.
-    // Ahora solo se enfoca en el layout.
-    <div className="min-h-screen bg-gray-50 p-4 sm:p-8">
+    return (
+        // ELIMINAMOS el envoltorio de <UserProvider> aquí.
+        // Ahora solo se enfoca en el layout.
+        <div className="min-h-screen bg-gray-100 p-4 sm:p-8">
         <div className="max-w-7xl mx-auto py-6">
             
             {/* Título de la sección principal */}
@@ -30,17 +31,18 @@ export default function OwnProfile() {
             {/* Contenedor principal con diseño adaptable (side-by-side en lg) */}
             <div className="flex flex-col lg:flex-row gap-6">
                 
-                {/* 1. Barra Lateral */}
-                <div className="lg:w-96 flex-shrink-0">
-                    {/* UsuarioProfileAside usará el useUser del Provider padre */}
-                    <UsuarioProfileAside />
-                </div>
+                    {/* Profile Sidebar (expand on hover) - positioned to the left on large screens */}
+                    <ProfileSidebar />
 
-                {/* 2. Área de Pestañas (Contenido Principal) */}
-                <div className="flex-1 min-w-0">
-                    {/* UsuarioProfileTabs usará el useUser del Provider padre */}
-                    <UsuarioProfileTabs />
-                </div>
+                    {/* 1. Barra Lateral */}
+                    <div className="lg:w-96 flex-shrink-0">
+                        <UsuarioProfileAside />
+                    </div>
+
+                    {/* 2. Área de Pestañas (Contenido Principal) */}
+                    <div className="flex-1 min-w-0">
+                        <UsuarioProfileTabs />
+                    </div>
             </div>
         </div>
     </div>

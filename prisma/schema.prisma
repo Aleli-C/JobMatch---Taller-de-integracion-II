@@ -41,6 +41,8 @@ model Usuario {
   foros              Foro[]
   respuestas         RespuestaForo[]
   PasswordResetToken PasswordResetToken[]
+  ubicacionId  Int?        @map("ubicacion_id")
+  ubicacion    Ubicacion?  @relation(fields: [ubicacionId], references: [id])
 
   @@index([correo])
   @@map("usuarios")
@@ -80,10 +82,11 @@ model Ubicacion {
   ciudad   String  @db.VarChar(100)
   comuna   String  @db.VarChar(100)
   region   String  @db.VarChar(100)
-  latitud  Decimal @db.Decimal(10, 8)
-  longitud Decimal @db.Decimal(11, 8)
+  latitud  Decimal? @db.Decimal(10, 8)
+  longitud Decimal? @db.Decimal(11, 8)
 
   publicaciones Publicacion[]
+  usuarios      Usuario[]
 
   @@index([ciudad])
   @@index([region])
@@ -320,8 +323,8 @@ model RespuestaForo {
 // ==============================Enums ==============================
 
 enum TipoUsuario {
-  EMPLEADOR
-  EMPLEADO
+  USUARIO
+  ADMIN
 }
 
 enum TipoTrabajo {

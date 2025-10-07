@@ -2,111 +2,129 @@
 import {
   Users,
   MapPin,
-  Shield,
-  Calendar,
-  Star,
+  Briefcase,
   Search,
   Phone,
   Mail,
   Clock,
+  Wrench,
+  Home,
+  Package,
+  ArrowRight,
   TrendingUp,
-  Award,
-  Briefcase,
 } from "lucide-react";
 import Link from "next/link";
-import { logout } from "@/app/auth/login/logout_"; // ajusta la ruta si no usas "@"
 
 export default function JobMatchHome() {
-  const features = [
-    { icon: <Search className="w-8 h-8 text-blue-600" />, title: "Ofertas laborales al instante", description: "Encuentra oportunidades de trabajo en tiempo real que se adapten a tu perfil profesional y objetivos." },
-    { icon: <Users className="w-8 h-8 text-blue-600" />, title: "Chatea con tu Match", description: "Conecta directamente con empleadores interesados en tu perfil para una comunicación más efectiva." },
-    { icon: <MapPin className="w-8 h-8 text-blue-600" />, title: "Geolocaliza Trabajos", description: "Encuentra empleos cerca de tu ubicación o en la zona donde deseas trabajar." },
-    { icon: <Shield className="w-8 h-8 text-blue-600" />, title: "Ofertas seguras y verificadas", description: "Todas las ofertas pasan por un proceso de verificación para garantizar su autenticidad." },
-    { icon: <Calendar className="w-8 h-8 text-blue-600" />, title: "Horarios de trabajo flexibles", description: "Encuentra trabajos con horarios que se adapten a tu estilo de vida y necesidades." },
-    { icon: <Star className="w-8 h-8 text-blue-600" />, title: "Transparente Feedback", description: "Recibe retroalimentación clara sobre tu proceso de selección y mejora tu perfil." },
-  ];
-
   const news = [
-    { title: "Nuevas oportunidades en tecnología", description: "El sector tech sigue creciendo con más de 500 nuevas ofertas esta semana", date: "22 Sep 2024", category: "Tecnología" },
-    { title: "Tendencias del trabajo remoto", description: "El 70% de las empresas ofrecen modalidad híbrida o remota completa", date: "20 Sep 2024", category: "Tendencias" },
-    { title: "JobMatch supera los 10,000 usuarios", description: "Celebramos este hito con nuevas funcionalidades para mejorar tu experiencia", date: "18 Sep 2024", category: "Empresa" },
+    {
+      title: "Nuevas oportunidades en servicios del hogar",
+      description:
+        "Más de 200 nuevas solicitudes de ayuda doméstica y mantenimiento esta semana",
+      date: "03 Oct 2025",
+      category: "Servicios",
+    },
+    {
+      title: "Tendencias en trabajos flexibles",
+      description:
+        "El 85% de los usuarios prefiere trabajos puntuales con horarios adaptables",
+      date: "28 Sep 2025",
+      category: "Tendencias",
+    },
+    {
+      title: "JobMatch conecta más de 5,000 matches",
+      description:
+        "Celebramos miles de conexiones exitosas entre trabajadores y empleadores",
+      date: "25 Sep 2025",
+      category: "Empresa",
+    },
   ];
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-end">
-            <nav className="flex items-center gap-4">
-              <form action={logout}>
-                <button
-                  type="submit"
-                  className="text-gray-700 hover:text-red-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-                >
-                  Cerrar sesión
-                </button>
-              </form>
-              <Link
-                href="/auth/login"
-                className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-              >
-                Iniciar Sesión
-              </Link>
-              <Link
-                href="/auth/register"
-                className="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-md text-sm font-medium transition-colors"
-              >
-                Registrarse
-              </Link>
-            </nav>
-          </div>
-        </div>
-      </header>
-
-
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-blue-50 to-blue-100 py-16">
+      {/* Hero Section - Descripción de JobMatch */}
+      <section className="bg-gradient-to-br from-blue-50 to-blue-100 py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
-                Trabaja a tu ritmo, <span className="text-blue-600">gana en tu tiempo</span>
+              <h1 className="text-5xl font-bold text-gray-900 mb-6">
+                Conecta con{" "}
+                <span className="text-blue-600">trabajos flexibles</span> y
+                personas cuando las necesites
               </h1>
-              <p className="text-lg text-gray-600 mb-8">
-                JobMatch te conecta con ofertas de trabajo en tiempo real que se ajustan a tus
-                habilidades y horarios, transformando la forma en que encuentras trabajo.
+              <p className="text-lg text-gray-700 mb-6 leading-relaxed">
+                JobMatch es la plataforma que te conecta con oportunidades de
+                trabajo puntual y casual. Ya sea que necesites ayuda con una
+                mudanza, jardinería, reparaciones del hogar o cualquier tarea
+                específica, aquí encontrarás a la persona indicada.
               </p>
-              <Link
-                href="/publications/publications_view"
-                className="inline-flex items-center gap-2 bg-blue-600 text-white hover:bg-blue-700 px-8 py-3 rounded-lg text-lg font-semibold transition-colors"
-              >
-                <span>Explorar trabajos</span>
-                <Search className="w-5 h-5" />
-              </Link>
+              <p className="text-lg text-gray-700 mb-8 leading-relaxed">
+                ¿Buscas trabajar? Explora cientos de publicaciones de personas
+                que necesitan tus habilidades. ¿Necesitas contratar? Publica tu
+                solicitud y recibe postulaciones de trabajadores calificados.
+                Todo en un solo lugar, de manera simple y directa.
+              </p>
+              <div className="flex flex-wrap gap-4">
+                <Link
+                  href="/publications/publications_view"
+                  className="inline-flex items-center gap-2 bg-blue-600 text-white hover:bg-blue-700 px-8 py-3 rounded-lg text-lg font-semibold transition-colors"
+                >
+                  <span>Buscar trabajo</span>
+                  <Search className="w-5 h-5" />
+                </Link>
+                <Link
+                  href="/auth/register"
+                  className="inline-flex items-center gap-2 bg-white text-blue-600 border-2 border-blue-600 hover:bg-blue-50 px-8 py-3 rounded-lg text-lg font-semibold transition-colors"
+                >
+                  <span>Publicar necesidad</span>
+                  <Briefcase className="w-5 h-5" />
+                </Link>
+              </div>
             </div>
             <div className="relative">
-              <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-8 text-white">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white/20 rounded-lg p-4 text-center">
-                    <Briefcase className="w-8 h-8 mx-auto mb-2" />
-                    <div className="text-2xl font-bold">5,000+</div>
-                    <div className="text-sm">Empleos</div>
+              <div className="bg-white rounded-2xl shadow-xl p-8">
+                <h3 className="text-2xl font-bold text-gray-900 mb-6 text-center">
+                  Trabajos populares
+                </h3>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-lg">
+                    <div className="bg-blue-600 p-3 rounded-lg">
+                      <Home className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-gray-900">
+                        Mudanzas y transporte
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        350+ publicaciones
+                      </div>
+                    </div>
                   </div>
-                  <div className="bg-white/20 rounded-lg p-4 text-center">
-                    <Users className="w-8 h-8 mx-auto mb-2" />
-                    <div className="text-2xl font-bold">10,000+</div>
-                    <div className="text-sm">Usuarios</div>
+                  <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-lg">
+                    <div className="bg-blue-600 p-3 rounded-lg">
+                      <Wrench className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-gray-900">
+                        Reparaciones y mantenimiento
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        280+ publicaciones
+                      </div>
+                    </div>
                   </div>
-                  <div className="bg-white/20 rounded-lg p-4 text-center">
-                    <TrendingUp className="w-8 h-8 mx-auto mb-2" />
-                    <div className="text-2xl font-bold">95%</div>
-                    <div className="text-sm">Éxito</div>
-                  </div>
-                  <div className="bg-white/20 rounded-lg p-4 text-center">
-                    <Award className="w-8 h-8 mx-auto mb-2" />
-                    <div className="text-2xl font-bold">4.8</div>
-                    <div className="text-sm">Rating</div>
+                  <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-lg">
+                    <div className="bg-blue-600 p-3 rounded-lg">
+                      <Package className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-gray-900">
+                        Servicios del hogar
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        420+ publicaciones
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -115,35 +133,70 @@ export default function JobMatchHome() {
         </div>
       </section>
 
-      {/* Features */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">¿Por qué elegir JobMatch?</h2>
-            <p className="text-lg text-gray-600">Descubre las ventajas que nos hacen diferentes</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {features.map((feature, idx) => (
-              <div key={idx} className="text-center p-6 rounded-lg hover:shadow-lg transition-shadow">
-                <div className="flex justify-center mb-4">{feature.icon}</div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">{feature.title}</h3>
-                <p className="text-gray-600">{feature.description}</p>
+      {/* Invitación a explorar publicaciones */}
+      <section className="py-20 bg-white">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-12 shadow-2xl">
+            <Users className="w-16 h-16 text-white mx-auto mb-6" />
+            <h2 className="text-4xl font-bold text-white mb-4">
+              Miles de oportunidades te esperan
+            </h2>
+            <p className="text-xl text-blue-100 mb-8 max-w-3xl mx-auto">
+              Explora nuestra plataforma y descubre trabajos puntuales que se
+              ajusten a tu tiempo y habilidades. Desde tareas sencillas hasta
+              proyectos más complejos, hay algo para todos.
+            </p>
+            <Link
+              href="/publications/publications_view"
+              className="inline-flex items-center gap-3 bg-white text-blue-600 hover:bg-gray-100 px-10 py-4 rounded-lg text-lg font-bold transition-colors shadow-lg"
+            >
+              <span>Explorar publicaciones ahora</span>
+              <ArrowRight className="w-6 h-6" />
+            </Link>
+            <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
+                <MapPin className="w-10 h-10 text-white mx-auto mb-3" />
+                <div className="text-white">
+                  <div className="text-3xl font-bold mb-1">100+</div>
+                  <div className="text-blue-100">Ciudades activas</div>
+                </div>
               </div>
-            ))}
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
+                <Briefcase className="w-10 h-10 text-white mx-auto mb-3" />
+                <div className="text-white">
+                  <div className="text-3xl font-bold mb-1">5,000+</div>
+                  <div className="text-blue-100">Trabajos publicados</div>
+                </div>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
+                <TrendingUp className="w-10 h-10 text-white mx-auto mb-3" />
+                <div className="text-white">
+                  <div className="text-3xl font-bold mb-1">92%</div>
+                  <div className="text-blue-100">Tasa de conexión</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* News */}
+      {/* News Section */}
       <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Últimas Noticias</h2>
-            <p className="text-lg text-gray-600">Mantente al día con las tendencias del mercado laboral</p>
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+              Últimas Noticias
+            </h2>
+            <p className="text-lg text-gray-600">
+              Mantente al día con las tendencias del mercado laboral
+            </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {news.map((article, idx) => (
-              <article key={idx} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+            {news.map((article, index) => (
+              <article
+                key={index}
+                className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+              >
                 <div className="p-6">
                   <div className="flex items-center justify-between mb-3">
                     <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
@@ -154,7 +207,9 @@ export default function JobMatchHome() {
                       {article.date}
                     </div>
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3">{article.title}</h3>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                    {article.title}
+                  </h3>
                   <p className="text-gray-600 text-sm">{article.description}</p>
                 </div>
               </article>
@@ -167,62 +222,44 @@ export default function JobMatchHome() {
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Contáctanos</h2>
-            <p className="text-lg text-gray-600">¿Tienes preguntas? Estamos aquí para ayudarte</p>
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+              Contáctanos
+            </h2>
+            <p className="text-lg text-gray-600">
+              ¿Tienes preguntas? Estamos aquí para ayudarte
+            </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <div className="text-center p-6 bg-blue-50 rounded-lg">
               <div className="flex justify-center mb-4">
                 <Mail className="w-8 h-8 text-blue-600" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Correo Electrónico</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                Correo Electrónico
+              </h3>
               <p className="text-gray-600">Jobmatchsupport@gmail.com</p>
             </div>
             <div className="text-center p-6 bg-blue-50 rounded-lg">
               <div className="flex justify-center mb-4">
                 <Phone className="w-8 h-8 text-blue-600" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Teléfono</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                Teléfono
+              </h3>
               <p className="text-gray-600">+1 (555) 123-4567</p>
             </div>
             <div className="text-center p-6 bg-blue-50 rounded-lg">
               <div className="flex justify-center mb-4">
                 <Clock className="w-8 h-8 text-blue-600" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Horarios de Atención</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                Horarios de Atención
+              </h3>
               <p className="text-gray-600">Lun - Vie: 9:00 AM - 6:00 PM</p>
             </div>
           </div>
         </div>
       </section>
-
-      {/* CTA */}
-      <section className="bg-blue-600 py-16">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold text-white mb-4">¿Estás listo para encontrar tu trabajo ideal?</h2>
-          <p className="text-xl text-blue-100 mb-8">
-            Únete a miles de profesionales que ya encontraron su empleo perfecto
-          </p>
-          <Link
-            href="/auth/register"
-            className="inline-block bg-white text-blue-600 hover:bg-gray-100 px-8 py-3 rounded-lg text-lg font-semibold transition-colors"
-          >
-            Registrarse Ahora
-          </Link>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-gray-800 text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* ...tu footer tal cual... */}
-          <div className="flex items-center space-x-3 mb-4">
-            <img src="/JobMatch.png" alt="JobMatch Logo" className="h-8 w-8" />
-            <span className="text-xl font-bold">JobMatch</span>
-          </div>
-          {/* Resto del footer sin cambios */}
-        </div>
-      </footer>
     </div>
   );
 }
