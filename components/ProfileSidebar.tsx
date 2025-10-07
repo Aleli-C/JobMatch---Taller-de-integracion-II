@@ -24,7 +24,7 @@ const items: Item[] = [
     ),
   },
   {
-    path: '/profile/personal',
+    path: '/profile/personal_information',
     label: 'Información',
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -33,7 +33,7 @@ const items: Item[] = [
     ),
   },
   {
-    path: '/profile/pendientes',
+    path: '/profile/pendingjobs',
     label: 'Pendientes',
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -42,7 +42,7 @@ const items: Item[] = [
     ),
   },
   {
-    path: '/profile/favoritos',
+    path: '/profile/favorites',
     label: 'Favoritos',
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
@@ -51,7 +51,7 @@ const items: Item[] = [
     ),
   },
   {
-    path: '/profile/historial',
+    path: '/profile/profilehistory',
     label: 'Historial',
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

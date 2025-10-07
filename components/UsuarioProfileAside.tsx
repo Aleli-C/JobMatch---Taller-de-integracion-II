@@ -17,7 +17,6 @@ const UsuarioProfileAside = () => {
         <div className="relative w-36 h-36 rounded-full mx-auto mb-4 border-4 border-blue-500">
           <img
             id="profile-img"
-            src={u?.imagenUrl ?? ''}
             alt={`Foto de perfil de ${user.nombre}`}
             className="w-full h-full rounded-full object-cover p-2 bg-gray-200"
           />

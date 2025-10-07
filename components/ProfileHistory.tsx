@@ -1,38 +1,72 @@
 // components/ProfileHistory.tsx
 import { PublicationStatus, PublicationType } from "@/lib/types/publication";
 
-// Vista para la UI: fechas como string (serializable)
-export type PublicationView = {
-  idPublicacion: number;
-  idUsuario: number;
+// Soporte para ambos shapes: simple por IDs o con relaciones anidadas
+type PubBase = {
+  id: number;
+  usuarioId: number;
   titulo: string;
-  descripcion: string;
-  remuneracion: number;
+  descripcion?: string | null;
+  remuneracion: number | string; // Prisma.Decimal -> string
   tipo: PublicationType;
   estado: PublicationStatus;
-  fechaPublicacion: string; // ISO
-  fechaCierre?: string;     // ISO
-  idUbicacion: number;
-  idCategoria: number;
+  createdAt: string | Date;
+  closedAt?: string | Date | null;
+  // por IDs
+  ubicacionId?: number | null;
+  categoriaId?: number | null;
+  // por relaciones
+  ubicacion?: { region?: string | null; comuna?: string | null } | null;
+  categoria?: { nombre?: string | null } | null;
 };
 
 export type TopicView = {
   title: string;
   author?: string;
-  time: string;     // ISO
+  time?: string;            // compat legacy
+  createdAt?: string | Date; // preferido por schema
   replies: number;
   content?: string;
 };
 
 type ProfileHistoryProps = {
   forumHistory: TopicView[];
-  publications: PublicationView[];
+  publications: PubBase[];
 };
 
-export default function ProfileHistory({
-  forumHistory,
-  publications,
-}: ProfileHistoryProps) {
+// helpers
+const asNumber = (v: number | string) => Number(v ?? 0);
+const fmtMoneyCLP = (v: number | string) =>
+  asNumber(v).toLocaleString("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 });
+
+const asDate = (v?: string | Date | null) => (v ? new Date(v) : null);
+const fmtDateTime = (v?: string | Date | null) => {
+  const d = asDate(v);
+  return d ? d.toLocaleString("es-CL") : "";
+};
+const fmtDate = (v?: string | Date | null) => {
+  const d = asDate(v);
+  return d ? d.toLocaleDateString("es-CL") : "";
+};
+
+const statusLabel = (s: PublicationStatus) => {
+  switch (s) {
+    case "ACTIVO": return "Abierta";
+    case "CERRADO": return "Cerrado";
+    case "INACTIVO": return "Inactivo";
+    default: return String(s);
+  }
+};
+const typeLabel = (t: PublicationType) => {
+  switch (t) {
+    case "FULLTIME": return "Tiempo completo";
+    case "PARTTIME": return "Medio tiempo";
+    case "FREELANCE": return "Independiente";
+    default: return String(t);
+  }
+};
+
+export default function ProfileHistory({ forumHistory, publications }: ProfileHistoryProps) {
   return (
     <div className="space-y-8">
       {/* Historial de foros */}
@@ -49,7 +83,7 @@ export default function ProfileHistory({
                 <header className="flex flex-wrap items-center justify-between gap-2">
                   <h3 className="font-medium text-lg">{t.title}</h3>
                   <span className="text-xs text-gray-500">
-                    {new Date(t.time).toLocaleString()}
+                    {fmtDateTime(t.createdAt ?? t.time)}
                   </span>
                 </header>
 
@@ -76,42 +110,50 @@ export default function ProfileHistory({
 
         {publications?.length ? (
           <div className="space-y-4">
-            {publications.map((pub) => (
-              <article
-                key={pub.idPublicacion}
-                className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-[var(--card-bg)]"
-              >
-                <header className="flex flex-wrap items-center justify-between gap-2">
-                  <h3 className="font-medium text-lg">{pub.titulo}</h3>
-                  <span className="text-xs text-gray-500">
-                    {new Date(pub.fechaPublicacion).toLocaleString()}
-                  </span>
-                </header>
+            {publications.map((pub) => {
+              const loc =
+                pub.ubicacion?.comuna || pub.ubicacion?.region
+                  ? [pub.ubicacion?.comuna, pub.ubicacion?.region].filter(Boolean).join(", ")
+                  : (pub.ubicacionId ? `#${pub.ubicacionId}` : "—");
 
-                {pub.descripcion && (
-                  <p className="text-sm text-gray-700 dark:text-gray-300 mt-2 line-clamp-3">
-                    {pub.descripcion}
-                  </p>
-                )}
+              const cat = pub.categoria?.nombre || (pub.categoriaId ? `#${pub.categoriaId}` : "—");
 
-                <p className="text-sm text-gray-600 mt-3">
-                  <span className="font-medium">Estado:</span> {pub.estado} ·{" "}
-                  <span className="font-medium">Remuneración:</span>{" "}
-                  {Number(pub.remuneracion).toLocaleString()} ·{" "}
-                  <span className="font-medium">Tipo:</span> {pub.tipo}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  <span className="font-medium">Ubicación:</span> #{pub.idUbicacion} ·{" "}
-                  <span className="font-medium">Categoría:</span> #{pub.idCategoria}
-                  {pub.fechaCierre && (
-                    <>
-                      {" "}| <span className="font-medium">Cierre:</span>{" "}
-                      {new Date(pub.fechaCierre).toLocaleDateString()}
-                    </>
+              return (
+                <article
+                  key={pub.id}
+                  className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-[var(--card-bg)]"
+                >
+                  <header className="flex flex-wrap items-center justify-between gap-2">
+                    <h3 className="font-medium text-lg">{pub.titulo}</h3>
+                    <span className="text-xs text-gray-500">
+                      {fmtDateTime(pub.createdAt)}
+                    </span>
+                  </header>
+
+                  {pub.descripcion && (
+                    <p className="text-sm text-gray-700 dark:text-gray-300 mt-2 line-clamp-3">
+                      {pub.descripcion}
+                    </p>
                   )}
-                </p>
-              </article>
-            ))}
+
+                  <p className="text-sm text-gray-600 mt-3">
+                    <span className="font-medium">Estado:</span> {statusLabel(pub.estado)} ·{" "}
+                    <span className="font-medium">Remuneración:</span> {fmtMoneyCLP(pub.remuneracion)} ·{" "}
+                    <span className="font-medium">Tipo:</span> {typeLabel(pub.tipo)}
+                  </p>
+
+                  <p className="text-xs text-gray-500 mt-1">
+                    <span className="font-medium">Ubicación:</span> {loc} ·{" "}
+                    <span className="font-medium">Categoría:</span> {cat}
+                    {pub.closedAt && (
+                      <>
+                        {" "}| <span className="font-medium">Cierre:</span> {fmtDate(pub.closedAt)}
+                      </>
+                    )}
+                  </p>
+                </article>
+              );
+            })}
           </div>
         ) : (
           <p className="text-sm text-gray-500">No has creado publicaciones todavía.</p>
