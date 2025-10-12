@@ -31,6 +31,8 @@ export default function Login() {
       if (res.data?.token) {
         // opcional si tu API devuelve JWT:
         localStorage.setItem("token", res.data.token);
+        // guarda el id para futuras requests
+        localStorage.setItem('uid', String(res.data.user.id_usuario));
       }
       window.location.href = "/"; // redirige donde corresponda
     } catch (err: any) {

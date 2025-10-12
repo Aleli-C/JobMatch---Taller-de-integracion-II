@@ -58,6 +58,10 @@ const login = async (req, res) => {
       maxAge: TTL_MS,                               // expira en 30 min
       expires: new Date(Date.now() + TTL_MS),
     });
+    res.cookie('uid', String(u.id_usuario), {
+      httpOnly: true, sameSite: 'lax', secure: false, // true en prod + secure
+      maxAge: TTL_MS, expires: new Date(Date.now() + TTL_MS), path: '/',
+    });
     // sin token: devuelve datos del usuario
     return res.json({
       user: {

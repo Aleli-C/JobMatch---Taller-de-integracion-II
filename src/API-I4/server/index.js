@@ -42,6 +42,12 @@ app.use(calificacionesRoutes);
 app.use(authroutes);
 app.use(mensajesRoutes);
 
+app.post('/auth/logout', (req, res) => {
+  res.clearCookie('dev_auth', { path: '/' });
+  res.clearCookie('uid', { path: '/' });
+  return res.status(204).end();
+});
+
 // HTTP + Socket.IO
 const http = require('http');
 const { Server } = require('socket.io');
