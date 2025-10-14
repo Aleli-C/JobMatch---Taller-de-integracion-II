@@ -14,13 +14,10 @@ export default function Forum() {
 
   useEffect(() => {
     const q = sp.get("q") ?? undefined;
-    const tipo = sp.get("tipo") ?? undefined;
-    const ciudad = sp.get("ciudad") ?? undefined;
-    const region = sp.get("region") ?? undefined;
-    const estado = sp.get("estado") ?? undefined;
 
     setLoading(true);
-    fetchForums({ q, tipo, ciudad, region, estado })
+    setErr(null);
+    fetchForums({ q })
       .then(setForos)
       .catch(() => setErr("Error al cargar foros"))
       .finally(() => setLoading(false));
