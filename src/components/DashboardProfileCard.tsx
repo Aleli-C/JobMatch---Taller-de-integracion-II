@@ -68,6 +68,8 @@ export default function DashboardProfileCard({ perfil }) {
             </div>
           </section>
 
+          {/* publicaciones section (moved to dedicated page) */}
+
           <section className="mb-6">
             <h3 className="text-lg font-semibold mb-3 text-gray-700">Experiencia</h3>
             <div className="bg-white rounded-lg p-5 shadow-inner">
@@ -78,6 +80,8 @@ export default function DashboardProfileCard({ perfil }) {
               )}
             </div>
           </section>
+
+          {/* pendientes section (moved to dedicated page) */}
 
           <section>
             <h3 className="text-lg font-semibold mb-3 text-gray-700">Contacto</h3>
@@ -90,6 +94,7 @@ export default function DashboardProfileCard({ perfil }) {
         </div>
 
         <aside className="lg:col-span-1">
+          {/* favoritos section (moved to dedicated page) */}
           <section className="mb-6">
             <h3 className="text-lg font-semibold mb-3 text-gray-700">Habilidades</h3>
             <div className="bg-gradient-to-b from-white to-slate-50 rounded-lg p-4">
