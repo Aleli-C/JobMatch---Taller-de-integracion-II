@@ -12,7 +12,7 @@ type Publicacion = {
   descripcion: string;
   direccion?: string | null;
   horario?: string | null;
-  tipo?: string | null; 
+  tipo?: string | null;
   monto?: number | string | null;
   horas?: string | null;
   estado: "activa" | "pausada" | "cerrada" | "eliminada";
@@ -24,7 +24,10 @@ type Publicacion = {
 const clp = (v: number | string | null | undefined) => {
   const n = typeof v === "string" ? Number(v) : typeof v === "number" ? v : NaN;
   return Number.isFinite(n)
-    ? new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" }).format(n)
+    ? new Intl.NumberFormat("es-CL", {
+        style: "currency",
+        currency: "CLP",
+      }).format(n)
     : undefined;
 };
 
@@ -35,7 +38,11 @@ const estadoStyle: Record<Publicacion["estado"], string> = {
   eliminada: "bg-rose-50 text-rose-700 ring-rose-200",
 };
 
-export default function PublicationCard({ searchParams }: { searchParams: SearchParams }) {
+export default function PublicationCard({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
   const [items, setItems] = useState<Publicacion[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
@@ -56,7 +63,13 @@ export default function PublicationCard({ searchParams }: { searchParams: Search
       limit: 12,
       offset: 0,
     };
-  }, [searchParams.q, searchParams.tipo, searchParams.ciudad, searchParams.region, searchParams.estado]);
+  }, [
+    searchParams.q,
+    searchParams.tipo,
+    searchParams.ciudad,
+    searchParams.region,
+    searchParams.estado,
+  ]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -64,15 +77,30 @@ export default function PublicationCard({ searchParams }: { searchParams: Search
     setErr(null);
 
     api
-      .get<{ items: Publicacion[]; limit: number; offset: number }>("/publicaciones", {
-        params: { q: (params as any).q, ciudad: (params as any).ciudad, region: (params as any).region, estado: (params as any).estado, limit: 12, offset: 0 },
-        signal: controller.signal,
-      })
+      .get<{ items: Publicacion[]; limit: number; offset: number }>(
+        "/publicaciones",
+        {
+          params: {
+            q: (params as any).q,
+            ciudad: (params as any).ciudad,
+            region: (params as any).region,
+            estado: (params as any).estado,
+            limit: 12,
+            offset: 0,
+          },
+          signal: controller.signal,
+        }
+      )
       .then(({ data }) => {
         const arr = Array.isArray(data?.items) ? data.items : [];
-        const onlyNecesidad = arr.filter((x) => (x.tipo ?? "").toLowerCase() === "necesidad");
+        const onlyNecesidad = arr.filter(
+          (x) => (x.tipo ?? "").toLowerCase() === "necesidad"
+        );
         const byTipo = (params as any).__tipo
-          ? onlyNecesidad.filter((x) => x.tipo?.toLowerCase() === (params as any).__tipo.toLowerCase())
+          ? onlyNecesidad.filter(
+              (x) =>
+                x.tipo?.toLowerCase() === (params as any).__tipo.toLowerCase()
+            )
           : onlyNecesidad;
         setItems(byTipo);
       })
@@ -86,10 +114,17 @@ export default function PublicationCard({ searchParams }: { searchParams: Search
   }, [params]);
 
   if (loading)
-    return <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">{Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-48 rounded-2xl bg-gray-100 animate-pulse" />)}</div>;
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="h-48 rounded-2xl bg-gray-100 animate-pulse" />
+        ))}
+      </div>
+    );
 
   if (err) return <p className="text-red-600">Error: {err}</p>;
-  if (!items.length) return <p className="text-gray-500">Sin publicaciones de necesidad.</p>;
+  if (!items.length)
+    return <p className="text-gray-500">Sin publicaciones de necesidad.</p>;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -104,7 +139,11 @@ export default function PublicationCard({ searchParams }: { searchParams: Search
               <h3 className="text-base font-semibold leading-tight line-clamp-2">
                 {p.titulo}
               </h3>
-              <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs ring ${estadoStyle[p.estado]}`}>
+              <span
+                className={`shrink-0 rounded-full px-2 py-0.5 text-xs ring ${
+                  estadoStyle[p.estado]
+                }`}
+              >
                 {p.estado}
               </span>
             </div>
@@ -115,12 +154,17 @@ export default function PublicationCard({ searchParams }: { searchParams: Search
                 Necesidad
               </span>
               {(p.ciudad || p.region) && (
-                <span className="text-gray-600">📍 {p.ciudad}{p.region ? `, ${p.region}` : ""}</span>
+                <span className="text-gray-600">
+                  📍 {p.ciudad}
+                  {p.region ? `, ${p.region}` : ""}
+                </span>
               )}
             </div>
 
             {/* Descripción */}
-            <p className="mt-2 text-sm text-gray-700 line-clamp-3">{p.descripcion}</p>
+            <p className="mt-2 text-sm text-gray-700 line-clamp-3">
+              {p.descripcion}
+            </p>
 
             {/* Meta grid */}
             <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">
@@ -153,9 +197,14 @@ export default function PublicationCard({ searchParams }: { searchParams: Search
             {/* Footer */}
             <div className="mt-4 flex items-center justify-between">
               <span className="text-xs text-gray-500">
-                {(p.created_at && new Date(p.created_at).toLocaleDateString("es-CL")) || ""}
+                {(p.created_at &&
+                  new Date(p.created_at).toLocaleDateString("es-CL")) ||
+                  ""}
               </span>
               <button
+                onClick={() =>
+                  (window.location.href = `/publications/publications_detail?id=${p.id_publicacion}`)
+                }
                 className="rounded-xl bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
                 type="button"
               >
