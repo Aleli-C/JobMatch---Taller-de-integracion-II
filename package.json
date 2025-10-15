@@ -27,6 +27,7 @@
     "@types/express": "^5.0.3",
     "axios": "^1.12.2",
     "bcryptjs": "^3.0.2",
+    "cookie-parser": "^1.4.7",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "jose": "^6.1.0",
