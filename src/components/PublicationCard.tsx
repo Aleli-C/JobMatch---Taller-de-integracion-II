@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import api from "@/lib/api";
 
 type SearchParams = Record<string, string | string[] | null>;
+type Scope = "all" | "mine";
 
 type Publicacion = {
   id_publicacion: number;
@@ -40,8 +41,10 @@ const estadoStyle: Record<Publicacion["estado"], string> = {
 
 export default function PublicationCard({
   searchParams,
+  scope = "all",
 }: {
   searchParams: SearchParams;
+  scope?: Scope;
 }) {
   const [items, setItems] = useState<Publicacion[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,12 +56,13 @@ export default function PublicationCard({
     const ciudad = String(searchParams.ciudad ?? "");
     const region = String(searchParams.region ?? "");
     const estado = String(searchParams.estado ?? "");
+    const mine = scope === "mine" ? 1 : undefined;
     return {
       ...(q ? { q } : {}),
       ...(ciudad ? { ciudad } : {}),
       ...(region ? { region } : {}),
       ...(estado ? { estado } : {}),
-      // el backend no filtra por tipo; lo hacemos client-side
+      ...(mine ? { mine } : {}),
       __tipo: tipo || "",
       limit: 12,
       offset: 0,
@@ -69,6 +73,7 @@ export default function PublicationCard({
     searchParams.ciudad,
     searchParams.region,
     searchParams.estado,
+    scope,
   ]);
 
   useEffect(() => {
@@ -87,8 +92,10 @@ export default function PublicationCard({
             estado: (params as any).estado,
             limit: 12,
             offset: 0,
+            ...((params as any).mine ? { mine: 1 } : {}), // <-- condicional
           },
           signal: controller.signal,
+          withCredentials: true,
         }
       )
       .then(({ data }) => {
