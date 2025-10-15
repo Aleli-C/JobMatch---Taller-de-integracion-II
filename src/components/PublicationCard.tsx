@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import api from "@/lib/api";
 
 type SearchParams = Record<string, string | string[] | null>;
+type Scope = "all" | "mine";
 
 type Publicacion = {
   id_publicacion: number;
@@ -35,7 +36,13 @@ const estadoStyle: Record<Publicacion["estado"], string> = {
   eliminada: "bg-rose-50 text-rose-700 ring-rose-200",
 };
 
-export default function PublicationCard({ searchParams }: { searchParams: SearchParams }) {
+export default function PublicationCard({
+  searchParams,
+  scope = "all",
+}: {
+  searchParams: SearchParams;
+  scope?: Scope;
+}) {
   const [items, setItems] = useState<Publicacion[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
@@ -46,17 +53,18 @@ export default function PublicationCard({ searchParams }: { searchParams: Search
     const ciudad = String(searchParams.ciudad ?? "");
     const region = String(searchParams.region ?? "");
     const estado = String(searchParams.estado ?? "");
+    const mine = scope === "mine" ? 1 : undefined; 
     return {
       ...(q ? { q } : {}),
       ...(ciudad ? { ciudad } : {}),
       ...(region ? { region } : {}),
       ...(estado ? { estado } : {}),
-      // el backend no filtra por tipo; lo hacemos client-side
+      ...(mine ? { mine } : {}),                  
       __tipo: tipo || "",
       limit: 12,
       offset: 0,
     };
-  }, [searchParams.q, searchParams.tipo, searchParams.ciudad, searchParams.region, searchParams.estado]);
+  }, [searchParams.q, searchParams.tipo, searchParams.ciudad, searchParams.region, searchParams.estado, scope]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -65,8 +73,17 @@ export default function PublicationCard({ searchParams }: { searchParams: Search
 
     api
       .get<{ items: Publicacion[]; limit: number; offset: number }>("/publicaciones", {
-        params: { q: (params as any).q, ciudad: (params as any).ciudad, region: (params as any).region, estado: (params as any).estado, limit: 12, offset: 0 },
+        params: {
+          q: (params as any).q,
+          ciudad: (params as any).ciudad,
+          region: (params as any).region,
+          estado: (params as any).estado,
+          limit: 12,
+          offset: 0,
+          ...(params as any).mine ? { mine: 1 } : {},  // <-- condicional
+        },
         signal: controller.signal,
+        withCredentials: true,
       })
       .then(({ data }) => {
         const arr = Array.isArray(data?.items) ? data.items : [];
