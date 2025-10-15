@@ -8,7 +8,7 @@ import OwnPublicationsToolbar from "../../../components/OwnPublicationsToolbar";
 import {
   GetPublications,
   UpdatePublication,
-  DeletePublication,          // ← NUEVO
+  DeletePublication, // ← NUEVO
   type Filtro,
 } from "./actions";
 import { Dialog } from "@headlessui/react";
@@ -61,11 +61,15 @@ export default function MisPublicaciones() {
 
   const totalPages = Math.ceil(publicaciones.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentItems = publicaciones.slice(startIndex, startIndex + itemsPerPage);
+  const currentItems = publicaciones.slice(
+    startIndex,
+    startIndex + itemsPerPage
+  );
 
   // ====== BORRAR usando Server Action ======
   const handleDelete = (id: number) => {
-    if (!window.confirm("¿Seguro que quieres eliminar esta publicación?")) return;
+    if (!window.confirm("¿Seguro que quieres eliminar esta publicación?"))
+      return;
     startTransition(async () => {
       const res = await DeletePublication(id);
       if (!res.ok) {
@@ -119,7 +123,11 @@ export default function MisPublicaciones() {
         {/* Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {currentItems.map((pub) => {
-            const location = [pub?.ubicacion?.comuna, pub?.ubicacion?.ciudad, pub?.ubicacion?.region]
+            const location = [
+              pub?.ubicacion?.comuna,
+              pub?.ubicacion?.ciudad,
+              pub?.ubicacion?.region,
+            ]
               .filter(Boolean)
               .join(", ");
             return (
@@ -129,11 +137,13 @@ export default function MisPublicaciones() {
                 description={pub.descripcion}
                 icon={pub.icono}
                 location={location || undefined}
-                salary={pub.remuneracion ? formatCLP(pub.remuneracion) : undefined}
+                salary={
+                  pub.remuneracion ? formatCLP(pub.remuneracion) : undefined
+                }
                 jobType={pub.tipo}
                 category={pub.categoria?.nombre}
                 onEdit={() => setEditingPub(pub)}
-                onDelete={() => handleDelete(pub.id)}   // ← ahora borra en DB
+                onDelete={() => handleDelete(pub.id)} // ← ahora borra en DB
                 showDetailsButton={false}
               />
             );
@@ -161,7 +171,11 @@ export default function MisPublicaciones() {
 
         {/* Modal edición conectado a la action */}
         {editingPub && (
-          <Dialog open={!!editingPub} onClose={() => setEditingPub(null)} className="relative z-50">
+          <Dialog
+            open={!!editingPub}
+            onClose={() => setEditingPub(null)}
+            className="relative z-50"
+          >
             <div className="fixed inset-0 bg-black/40" aria-hidden="true" />
             <div className="fixed inset-0 flex items-center justify-center p-4">
               <Dialog.Panel className="bg-white rounded-xl shadow-lg max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
@@ -233,7 +247,11 @@ export default function MisPublicaciones() {
                       <input
                         type="text"
                         className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-gray-50"
-                        value={[editingPub?.ubicacion?.comuna, editingPub?.ubicacion?.ciudad, editingPub?.ubicacion?.region]
+                        value={[
+                          editingPub?.ubicacion?.comuna,
+                          editingPub?.ubicacion?.ciudad,
+                          editingPub?.ubicacion?.region,
+                        ]
                           .filter(Boolean)
                           .join(", ")}
                         readOnly
@@ -248,23 +266,33 @@ export default function MisPublicaciones() {
                       <input
                         type="text"
                         className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-gray-50"
-                        value={editingPub.remuneracion ? formatCLP(editingPub.remuneracion) : "No especificada"}
+                        value={
+                          editingPub.remuneracion
+                            ? formatCLP(editingPub.remuneracion)
+                            : "No especificada"
+                        }
                         readOnly
                       />
                     </div>
                   </div>
 
                   <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-                    <h3 className="font-medium text-gray-700 mb-3">Información adicional</h3>
+                    <h3 className="font-medium text-gray-700 mb-3">
+                      Información adicional
+                    </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                       <div className="flex items-center gap-2 text-gray-600">
                         <Calendar className="w-4 h-4" />
-                        <span>Publicado: {formatDate(editingPub.fechaPublicacion)}</span>
+                        <span>
+                          Publicado: {formatDate(editingPub.fechaPublicacion)}
+                        </span>
                       </div>
                       {editingPub.fechaCierre && (
                         <div className="flex items-center gap-2 text-gray-600">
                           <Calendar className="w-4 h-4" />
-                          <span>Cierre: {formatDate(editingPub.fechaCierre)}</span>
+                          <span>
+                            Cierre: {formatDate(editingPub.fechaCierre)}
+                          </span>
                         </div>
                       )}
                       <div className="flex items-center gap-2 text-gray-600">
