@@ -141,32 +141,29 @@ const getPublicacionById = async (req, res) => {
 
 const getPublicaciones = async (req, res) => {
   try {
-    const limit = Math.max(1, Math.min(100, Number(req.query.limit || 20)));
+    const limit  = Math.max(1, Math.min(100, Number(req.query.limit || 20)));
     const offset = Math.max(0, Number(req.query.offset || 0));
-    const { q, ciudad, region, estado } = req.query || {};
+    const { q, ciudad, region, estado, mine } = req.query || {};
 
     const where = [];
     const params = [];
 
-    if (q) {
-      where.push('(titulo LIKE ? OR descripcion LIKE ?)');
-      params.push(`%${t(q)}%`, `%${t(q)}%`);
-    }
-    if (ciudad) {
-      where.push('ciudad = ?');
-      params.push(t(ciudad));
-    }
-    if (region) {
-      where.push('region = ?');
-      params.push(t(region));
-    }
-    if (estado) {
-      where.push('estado = ?');
-      params.push(t(estado));
+    if (q)       { where.push('(titulo LIKE ? OR descripcion LIKE ?)'); params.push(`%${t(q)}%`, `%${t(q)}%`); }
+    if (ciudad)  { where.push('ciudad = ?');  params.push(t(ciudad)); }
+    if (region)  { where.push('region = ?');  params.push(t(region)); }
+    if (estado)  { where.push('estado = ?');  params.push(t(estado)); }
+
+    // solo mis publicaciones
+    if (String(req.query.mine) === '1') {
+      const uid = Number(req.cookies?.uid || 0);
+      if (!uid) return res.status(401).json({ error: 'No autenticado' });
+      where.push('id_usuario = ?');
+      params.push(uid);
     }
 
     const sql = `
-      SELECT *
+      SELECT id_publicacion, id_usuario, titulo, descripcion, direccion, horario,
+             tipo, monto, horas, estado, ciudad, region, created_at
       FROM \`Publicaciones\`
       ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
       ORDER BY created_at DESC
@@ -175,10 +172,10 @@ const getPublicaciones = async (req, res) => {
     params.push(limit, offset);
 
     const [rows] = await pool.query(sql, params);
-    res.json({ items: rows, limit, offset });
+    return res.json({ items: rows, limit, offset });
   } catch (err) {
     console.error('getPublicaciones error:', err);
-    res.status(500).json({ error: 'Error al listar publicaciones' });
+    return res.status(500).json({ error: 'Error al listar publicaciones' });
   }
 };
 

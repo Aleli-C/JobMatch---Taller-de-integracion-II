@@ -26,7 +26,7 @@ export default async function Page({
       {/* Publicaciones de trabajo u otros tipos no-servicio */}
       <section className="space-y-4">
         <h2 className="text-xl font-semibold">Publicaciones</h2>
-        <PublicationCard searchParams={sp} />
+        <PublicationCard searchParams={sp} scope="all" />
       </section>
 
       {/* Publicaciones de servicios */}
