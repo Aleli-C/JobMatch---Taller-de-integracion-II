@@ -2,6 +2,7 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
+const cookieParser = require('cookie-parser');
 
 // Rutas
 const indexroutes = require('./routes/index.routes.js');
@@ -30,7 +31,7 @@ const corsOptions = {
   allowedHeaders: ['Content-Type','Authorization'],
 };
 app.use(cors(corsOptions));
-
+app.use(cookieParser());
 app.use(express.json());
 
 // Montar rutas API (sin cambios)
