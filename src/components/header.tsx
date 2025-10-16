@@ -20,6 +20,7 @@ export default function Header() {
   const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [animatingItems, setAnimatingItems] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const isActive = (href: string) =>
@@ -57,6 +58,17 @@ export default function Header() {
     };
   }, [dropdownOpen]);
 
+  // Activar animación cuando se abre el dropdown
+  useEffect(() => {
+    if (dropdownOpen) {
+      setAnimatingItems(false);
+      const timer = setTimeout(() => setAnimatingItems(true), 10);
+      return () => clearTimeout(timer);
+    } else {
+      setAnimatingItems(false);
+    }
+  }, [dropdownOpen]);
+
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
@@ -66,7 +78,7 @@ export default function Header() {
             <img
               src="/JobMatch.png"
               alt="JobMatch Logo"
-              className="h-12 w-16"
+              className="h-16 w-16"
             />
             <span className="text-2xl font-bold text-blue-600">JobMatch</span>
           </div>
@@ -131,25 +143,56 @@ export default function Header() {
                 <Link
                   href="/profile"
                   onClick={() => setDropdownOpen(false)}
-                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-blue-600 transition-colors duration-200"
+                  style={{
+                    opacity: animatingItems ? 1 : 0,
+                    transform: animatingItems
+                      ? "translateY(0)"
+                      : "translateY(-10px)",
+                    transition: "opacity 0.3s ease, transform 0.3s ease",
+                    transitionDelay: "0ms",
+                  }}
                 >
                   Ver perfil
                 </Link>
                 <button
                   type="button"
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-blue-600 transition-colors duration-200"
+                  style={{
+                    opacity: animatingItems ? 1 : 0,
+                    transform: animatingItems
+                      ? "translateY(0)"
+                      : "translateY(-10px)",
+                    transition: "opacity 0.3s ease, transform 0.3s ease",
+                    transitionDelay: "80ms",
+                  }}
                 >
                   Ayuda
                 </button>
-                <div className="border-t border-gray-100 my-1"></div>
+                <div
+                  className="border-t border-gray-100 my-1"
+                  style={{
+                    opacity: animatingItems ? 1 : 0,
+                    transition: "opacity 0.3s ease",
+                    transitionDelay: "160ms",
+                  }}
+                ></div>
                 <button
                   onClick={() => {
                     setDropdownOpen(false);
                     logout();
                   }}
                   disabled={signingOut}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-60"
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-blue-600 disabled:opacity-60 transition-colors duration-200"
                   type="button"
+                  style={{
+                    opacity: animatingItems ? 1 : 0,
+                    transform: animatingItems
+                      ? "translateY(0)"
+                      : "translateY(-10px)",
+                    transition: "opacity 0.3s ease, transform 0.3s ease",
+                    transitionDelay: "240ms",
+                  }}
                 >
                   Cerrar sesión
                 </button>

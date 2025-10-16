@@ -30,6 +30,7 @@
     "cookie-parser": "^1.4.7",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
+    "gsap": "^3.13.0",
     "jose": "^6.1.0",
     "lucide-react": "^0.544.0",
     "module-alias": "^2.2.3",
