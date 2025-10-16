@@ -109,23 +109,12 @@ export default function PublicationDetail({ id }: { id: number }) {
     setSendError(null);
 
     try {
-      // Leer uid de cookies (solución temporal hasta que se arregle el backend)
-      const cookies = document.cookie.split(';');
-      const uidCookie = cookies.find(c => c.trim().startsWith('uid='));
-      const uid = uidCookie ? Number(uidCookie.split('=')[1]) : null;
-
-      if (!uid) {
-        setSendError("No estás autenticado. Por favor inicia sesión.");
-        setSending(false);
-        return;
-      }
-
-      // Enviar postulación con todos los campos necesarios
+      // El backend ahora lee el uid automáticamente de las cookies
+      // Ya NO necesitamos enviar id_postulante
       await api.post('/postulaciones', {
         id_publicacion: id,
-        id_postulante: uid,
         mensaje: mensaje.trim(),
-        estado_postulacion: 'pendiente' // Aunque tiene DEFAULT en BD, lo enviamos explícitamente
+        estado_postulacion: 'pendiente'
       }, {
         withCredentials: true
       });
