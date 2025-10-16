@@ -28,10 +28,6 @@ export default function MyPostulationCard() {
   const [err, setErr] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [targetId, setTargetId] = useState<number | null>(null);
-  const [targetTitle, setTargetTitle] = useState<string | null>(null);
-
   const [limit] = useState<number>(9);
   const [offset, setOffset] = useState<number>(0);
   const [hasMore, setHasMore] = useState<boolean>(false);
@@ -106,22 +102,20 @@ export default function MyPostulationCard() {
     return () => controller.abort();
   }, [searchParams?.toString(), offset, limit]);
 
-  // confirm / delete (mantener tu modal actual)
-  const confirmDelete = (id: number, title?: string) => {
-    setTargetId(id);
-    setTargetTitle(title ?? null);
-    setConfirmOpen(true);
+  // confirm / delete (sacar popup: usar confirm nativo)
+  const confirmDelete = async (id: number, title?: string) => {
+    const ok = window.confirm(
+      `¿Eliminar tu postulación${title ? ` a "${title}"` : ""}? Esta acción no se puede deshacer.`
+    );
+    if (!ok) return;
+    await performDelete(id);
   };
 
-  const performDelete = async () => {
-    if (!targetId) return;
+  const performDelete = async (id: number) => {
     try {
-      setDeletingId(targetId);
-      await api.delete(`/postulaciones/${targetId}`, { withCredentials: true });
-      setPostulaciones((prev) => prev.filter((p) => p.id_postulacion !== targetId));
-      setConfirmOpen(false);
-      setTargetId(null);
-      setTargetTitle(null);
+      setDeletingId(id);
+      await api.delete(`/postulaciones/${id}`, { withCredentials: true });
+      setPostulaciones((prev) => prev.filter((p) => p.id_postulacion !== id));
     } catch (e: any) {
       setErr(String(e?.response?.data?.error ?? e?.message ?? "Error al eliminar"));
     } finally {
@@ -145,7 +139,7 @@ export default function MyPostulationCard() {
 
   return (
     <>
-      {/* mantiene tu UI completo (cards, paginado, modal) */}
+      {/* mantiene tu UI completo (cards, paginado) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {postulaciones.map((p) => (
           <article
@@ -188,14 +182,7 @@ export default function MyPostulationCard() {
                 </span>
 
                 <div className="flex items-center gap-2">
-                  <Link
-                    href={`/publicaciones/${p.id_publicacion}`}
-                    className="text-sm text-blue-600 hover:underline"
-                    aria-label={`Ver publicación ${p.id_publicacion}`}
-                  >
-                    Ver detalles
-                  </Link>
-
+                  {/* Removed "Ver detalles" link - only keep Eliminar */}
                   <button
                     className="rounded-xl bg-rose-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-rose-700 disabled:opacity-60"
                     type="button"
@@ -230,40 +217,6 @@ export default function MyPostulationCard() {
           Siguiente
         </button>
       </div>
-
-      {/* Confirm Modal */}
-      {confirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-lg ring-1 ring-gray-200">
-            <h2 className="text-lg font-semibold mb-2">Confirmar eliminación</h2>
-            <p className="text-sm text-gray-600 mb-4">
-              ¿Estás seguro que deseas eliminar tu postulación
-              {targetTitle ? ` a "${targetTitle}"` : ""}? Esta acción no se puede deshacer.
-            </p>
-            <div className="flex items-center justify-end gap-3">
-              <button
-                type="button"
-                className="px-4 py-2 rounded-xl border border-gray-300 bg-white text-sm hover:bg-gray-50"
-                onClick={() => {
-                  setConfirmOpen(false);
-                  setTargetId(null);
-                  setTargetTitle(null);
-                }}
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                className="px-4 py-2 rounded-xl bg-rose-600 text-white text-sm hover:bg-rose-700 disabled:opacity-60"
-                onClick={performDelete}
-                disabled={deletingId === targetId}
-              >
-                {deletingId === targetId ? "Eliminando..." : "Eliminar"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }
