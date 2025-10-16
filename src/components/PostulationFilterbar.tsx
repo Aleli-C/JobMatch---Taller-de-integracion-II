@@ -8,34 +8,32 @@ export default function PostulationFilterbar() {
   const pathname = usePathname();
   const sp = useSearchParams();
 
-  const [idPublicacion, setIdPublicacion] = useState(sp.get("id_publicacion") ?? "");
-  const [idPostulante, setIdPostulante] = useState(sp.get("id_postulante") ?? "");
-  const [estado, setEstado] = useState(sp.get("estado_postulacion") ?? "");
-  const [fecha, setFecha] = useState(sp.get("fecha") ?? "");
+  // Usamos prefijo `p_` para no chocar con otros filtros de la página
+  const [q, setQ] = useState(sp.get("p_q") ?? "");
+  const [estado, setEstado] = useState(sp.get("p_estado") ?? "");
+  const [fecha, setFecha] = useState(sp.get("p_fecha") ?? "");
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
-    setIdPublicacion(sp.get("id_publicacion") ?? "");
-    setIdPostulante(sp.get("id_postulante") ?? "");
-    setEstado(sp.get("estado_postulacion") ?? "");
-    setFecha(sp.get("fecha") ?? "");
+    setQ(sp.get("p_q") ?? "");
+    setEstado(sp.get("p_estado") ?? "");
+    setFecha(sp.get("p_fecha") ?? "");
   }, [sp]);
 
   const apply = () => {
     const params = new URLSearchParams();
-    if (idPublicacion) params.set("id_publicacion", idPublicacion);
-    if (idPostulante) params.set("id_postulante", idPostulante);
-    if (estado) params.set("estado_postulacion", estado);
-    if (fecha) params.set("fecha", fecha);
-    startTransition(() => router.push(`${pathname}?${params.toString()}`));
+    if (q) params.set("p_q", String(q));
+    if (estado) params.set("p_estado", estado);
+    if (fecha) params.set("p_fecha", fecha);
+    const qs = params.toString();
+    startTransition(() => router.replace(qs ? `${pathname}?${qs}` : pathname));
   };
 
   const clearAll = () => {
-    setIdPublicacion("");
-    setIdPostulante("");
+    setQ("");
     setEstado("");
     setFecha("");
-    startTransition(() => router.push(pathname));
+    startTransition(() => router.replace(pathname));
   };
 
   const onEnter = (e: KeyboardEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -47,31 +45,18 @@ export default function PostulationFilterbar() {
       <div
         className="
           grid grid-flow-row-dense gap-3
-          [grid-template-columns:repeat(auto-fit,minmax(180px,1fr))]
+          [grid-template-columns:repeat(auto-fit,minmax(200px,1fr))]
         "
       >
-        {/* ID Publicación */}
+        {/* Búsqueda por título / palabra */}
         <input
-          value={idPublicacion}
-          onChange={(e) => setIdPublicacion(e.target.value)}
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
           onKeyDown={onEnter}
-          placeholder="ID Publicación"
-          aria-label="ID Publicación"
+          placeholder="Buscar por título"
+          aria-label="Buscar por título"
           className="h-11 w-full rounded-xl border border-gray-300 px-3 text-sm outline-none focus:ring-2 focus:ring-blue-500"
-          type="number"
-          min="1"
-        />
-
-        {/* ID Postulante */}
-        <input
-          value={idPostulante}
-          onChange={(e) => setIdPostulante(e.target.value)}
-          onKeyDown={onEnter}
-          placeholder="ID Postulante"
-          aria-label="ID Postulante"
-          className="h-11 w-full rounded-xl border border-gray-300 px-3 text-sm outline-none focus:ring-2 focus:ring-blue-500"
-          type="number"
-          min="1"
+          type="search"
         />
 
         {/* Estado de la postulación */}
@@ -82,7 +67,7 @@ export default function PostulationFilterbar() {
           aria-label="Estado de la postulación"
           className="h-11 w-full rounded-xl border border-gray-300 px-3 text-sm outline-none focus:ring-2 focus:ring-blue-500"
         >
-          <option value="">Estado</option>
+          <option value="">Todos los estados</option>
           <option value="pendiente">Pendiente</option>
           <option value="aceptada">Aceptada</option>
           <option value="rechazada">Rechazada</option>

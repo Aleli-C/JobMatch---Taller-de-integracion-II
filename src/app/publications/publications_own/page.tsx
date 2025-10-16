@@ -1,6 +1,7 @@
 // src/app/publications/publications_own/page.tsx
 import PublicationCard from "@/components/PublicationCard";
 import MyPostulationCard from "@/components/MyPostulationCard";
+import PostulationFilterbar from "@/components/PostulationFilterbar";
 
 type SP = Record<string, string | string[] | null>;
 
@@ -36,6 +37,9 @@ export default async function Page({
         <h2 className="text-3xl font-bold text-blue-600 text-center">
           Mis postulaciones
         </h2>
+
+        {/* Filtro de postulaciones (agregado) */}
+        <PostulationFilterbar />
 
         {/* Contenedor de las postulaciones */}
         <div className="space-y-4">
