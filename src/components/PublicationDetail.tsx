@@ -60,6 +60,13 @@ export default function PublicationDetail({ id }: { id: number }) {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
 
+  // Estados del modal
+  const [showModal, setShowModal] = useState(false);
+  const [mensaje, setMensaje] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
+  const [sendSuccess, setSendSuccess] = useState(false);
+
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true);
@@ -86,6 +93,74 @@ export default function PublicationDetail({ id }: { id: number }) {
 
     return () => controller.abort();
   }, [id]);
+
+  const handlePostular = async () => {
+    if (!mensaje.trim()) {
+      setSendError("El mensaje no puede estar vacío");
+      return;
+    }
+
+    if (mensaje.length > 1000) {
+      setSendError("El mensaje no puede exceder 1000 caracteres");
+      return;
+    }
+
+    setSending(true);
+    setSendError(null);
+
+    try {
+      // Leer uid de cookies (solución temporal hasta que se arregle el backend)
+      const cookies = document.cookie.split(';');
+      const uidCookie = cookies.find(c => c.trim().startsWith('uid='));
+      const uid = uidCookie ? Number(uidCookie.split('=')[1]) : null;
+
+      if (!uid) {
+        setSendError("No estás autenticado. Por favor inicia sesión.");
+        setSending(false);
+        return;
+      }
+
+      // Enviar postulación con todos los campos necesarios
+      await api.post('/postulaciones', {
+        id_publicacion: id,
+        id_postulante: uid,
+        mensaje: mensaje.trim(),
+        estado_postulacion: 'pendiente' // Aunque tiene DEFAULT en BD, lo enviamos explícitamente
+      }, {
+        withCredentials: true
+      });
+
+      setSendSuccess(true);
+      setMensaje("");
+      
+      // Cerrar modal después de 2 segundos
+      setTimeout(() => {
+        setShowModal(false);
+        setSendSuccess(false);
+      }, 2000);
+
+    } catch (error: any) {
+      if (error?.response?.status === 409) {
+        setSendError("Ya has postulado a esta publicación anteriormente");
+      } else if (error?.response?.status === 401) {
+        setSendError("No estás autenticado. Por favor inicia sesión.");
+      } else if (error?.response?.status === 404) {
+        setSendError("La publicación no existe o fue eliminada");
+      } else {
+        const errorMsg = error?.response?.data?.error ?? error?.message ?? "Error al enviar postulación";
+        setSendError(errorMsg);
+      }
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setMensaje("");
+    setSendError(null);
+    setSendSuccess(false);
+  };
 
   if (loading) {
     return (
@@ -123,182 +198,264 @@ export default function PublicationDetail({ id }: { id: number }) {
   const style = tipoStyle[tipoKey] || tipoStyle.necesidad;
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-8">
-      {/* Botón volver */}
-      <button
-        onClick={() => window.history.back()}
-        className="mb-6 inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
-      >
-        <svg
-          className="w-4 h-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+    <>
+      <div className="max-w-4xl mx-auto px-6 py-8">
+        {/* Botón volver */}
+        <button
+          onClick={() => window.history.back()}
+          className="mb-6 inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M15 19l-7-7 7-7"
-          />
-        </svg>
-        Volver a publicaciones
-      </button>
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 19l-7-7 7-7"
+            />
+          </svg>
+          Volver a publicaciones
+        </button>
 
-      {/* Card principal */}
-      <article
-        className={`relative rounded-2xl p-[1px] bg-gradient-to-tr ${style.gradient}`}
-      >
-        <div className="rounded-2xl bg-white p-6 sm:p-8 shadow-sm ring-1 ring-gray-200">
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 pb-6 border-b border-gray-200">
-            <div className="space-y-3 flex-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span
-                  className={`rounded-full px-3 py-1 text-sm font-medium ring ${style.bg} ${style.text} ${style.ring}`}
-                >
-                  {pub.tipo || "Publicación"}
-                </span>
-                <span
-                  className={`rounded-full px-3 py-1 text-sm font-medium ring ${
-                    estadoStyle[pub.estado]
-                  }`}
-                >
-                  {pub.estado}
-                </span>
+        {/* Card principal */}
+        <article
+          className={`relative rounded-2xl p-[1px] bg-gradient-to-tr ${style.gradient}`}
+        >
+          <div className="rounded-2xl bg-white p-6 sm:p-8 shadow-sm ring-1 ring-gray-200">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 pb-6 border-b border-gray-200">
+              <div className="space-y-3 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span
+                    className={`rounded-full px-3 py-1 text-sm font-medium ring ${style.bg} ${style.text} ${style.ring}`}
+                  >
+                    {pub.tipo || "Publicación"}
+                  </span>
+                  <span
+                    className={`rounded-full px-3 py-1 text-sm font-medium ring ${
+                      estadoStyle[pub.estado]
+                    }`}
+                  >
+                    {pub.estado}
+                  </span>
+                </div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+                  {pub.titulo}
+                </h1>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                {pub.titulo}
-              </h1>
             </div>
-          </div>
 
-          {/* Descripción */}
-          <div className="py-6 border-b border-gray-200">
-            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
-              Descripción
-            </h2>
-            <p className="text-base text-gray-700 leading-relaxed whitespace-pre-wrap">
-              {pub.descripcion}
-            </p>
-          </div>
+            {/* Descripción */}
+            <div className="py-6 border-b border-gray-200">
+              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+                Descripción
+              </h2>
+              <p className="text-base text-gray-700 leading-relaxed whitespace-pre-wrap">
+                {pub.descripcion}
+              </p>
+            </div>
 
-          {/* Detalles principales */}
-          <div className="py-6 border-b border-gray-200">
-            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">
-              Detalles
-            </h2>
-            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {pub.monto != null && (
-                <div className="rounded-xl bg-gray-50 p-4 ring-1 ring-gray-200">
-                  <dt className="text-sm text-gray-500 mb-1">Monto</dt>
-                  <dd className="text-lg font-semibold text-gray-900">
-                    {clp(pub.monto)}
-                  </dd>
-                </div>
-              )}
-              {pub.horas && (
-                <div className="rounded-xl bg-gray-50 p-4 ring-1 ring-gray-200">
-                  <dt className="text-sm text-gray-500 mb-1">Horas</dt>
-                  <dd className="text-lg font-semibold text-gray-900">
-                    {pub.horas}
-                  </dd>
-                </div>
-              )}
-            </dl>
-          </div>
+            {/* Detalles principales */}
+            <div className="py-6 border-b border-gray-200">
+              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">
+                Detalles
+              </h2>
+              <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {pub.monto != null && (
+                  <div className="rounded-xl bg-gray-50 p-4 ring-1 ring-gray-200">
+                    <dt className="text-sm text-gray-500 mb-1">Monto</dt>
+                    <dd className="text-lg font-semibold text-gray-900">
+                      {clp(pub.monto)}
+                    </dd>
+                  </div>
+                )}
+                {pub.horas && (
+                  <div className="rounded-xl bg-gray-50 p-4 ring-1 ring-gray-200">
+                    <dt className="text-sm text-gray-500 mb-1">Horas</dt>
+                    <dd className="text-lg font-semibold text-gray-900">
+                      {pub.horas}
+                    </dd>
+                  </div>
+                )}
+              </dl>
+            </div>
 
-          {/* Ubicación y horario */}
-          <div className="py-6 border-b border-gray-200">
-            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">
-              Ubicación y Horario
-            </h2>
-            <dl className="space-y-4">
-              {(pub.ciudad || pub.region) && (
-                <div className="rounded-xl bg-gray-50 p-4 ring-1 ring-gray-200">
-                  <dt className="text-sm text-gray-500 mb-1 flex items-center gap-2">
-                    <span>📍</span>
-                    <span>Ubicación</span>
-                  </dt>
-                  <dd className="text-base font-medium text-gray-900">
-                    {pub.ciudad}
-                    {pub.ciudad && pub.region ? ", " : ""}
-                    {pub.region}
-                  </dd>
-                </div>
-              )}
-              {pub.direccion && (
-                <div className="rounded-xl bg-gray-50 p-4 ring-1 ring-gray-200">
-                  <dt className="text-sm text-gray-500 mb-1">Dirección</dt>
-                  <dd className="text-base font-medium text-gray-900">
-                    {pub.direccion}
-                  </dd>
-                </div>
-              )}
-              {pub.horario && (
-                <div className="rounded-xl bg-gray-50 p-4 ring-1 ring-gray-200">
-                  <dt className="text-sm text-gray-500 mb-1">Horario</dt>
-                  <dd className="text-base font-medium text-gray-900">
-                    {pub.horario}
-                  </dd>
-                </div>
-              )}
-            </dl>
-          </div>
+            {/* Ubicación y horario */}
+            <div className="py-6 border-b border-gray-200">
+              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">
+                Ubicación y Horario
+              </h2>
+              <dl className="space-y-4">
+                {(pub.ciudad || pub.region) && (
+                  <div className="rounded-xl bg-gray-50 p-4 ring-1 ring-gray-200">
+                    <dt className="text-sm text-gray-500 mb-1 flex items-center gap-2">
+                      <span>📍</span>
+                      <span>Ubicación</span>
+                    </dt>
+                    <dd className="text-base font-medium text-gray-900">
+                      {pub.ciudad}
+                      {pub.ciudad && pub.region ? ", " : ""}
+                      {pub.region}
+                    </dd>
+                  </div>
+                )}
+                {pub.direccion && (
+                  <div className="rounded-xl bg-gray-50 p-4 ring-1 ring-gray-200">
+                    <dt className="text-sm text-gray-500 mb-1">Dirección</dt>
+                    <dd className="text-base font-medium text-gray-900">
+                      {pub.direccion}
+                    </dd>
+                  </div>
+                )}
+                {pub.horario && (
+                  <div className="rounded-xl bg-gray-50 p-4 ring-1 ring-gray-200">
+                    <dt className="text-sm text-gray-500 mb-1">Horario</dt>
+                    <dd className="text-base font-medium text-gray-900">
+                      {pub.horario}
+                    </dd>
+                  </div>
+                )}
+              </dl>
+            </div>
 
-          {/* Información adicional */}
-          <div className="pt-6">
-            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">
-              Información Adicional
-            </h2>
-            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-              <div>
-                <dt className="text-gray-500 mb-1">Publicado</dt>
-                <dd className="text-gray-900 font-medium">
-                  {pub.created_at
-                    ? new Date(pub.created_at).toLocaleDateString("es-CL", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })
-                    : "—"}
-                </dd>
-              </div>
-              {pub.fecha_actualizacion && (
+            {/* Información adicional */}
+            <div className="pt-6">
+              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">
+                Información Adicional
+              </h2>
+              <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div>
-                  <dt className="text-gray-500 mb-1">Última actualización</dt>
+                  <dt className="text-gray-500 mb-1">Publicado</dt>
                   <dd className="text-gray-900 font-medium">
-                    {new Date(pub.fecha_actualizacion).toLocaleDateString(
-                      "es-CL",
-                      {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      }
-                    )}
+                    {pub.created_at
+                      ? new Date(pub.created_at).toLocaleDateString("es-CL", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        })
+                      : "—"}
                   </dd>
                 </div>
-              )}
-            </dl>
-          </div>
+                {pub.fecha_actualizacion && (
+                  <div>
+                    <dt className="text-gray-500 mb-1">Última actualización</dt>
+                    <dd className="text-gray-900 font-medium">
+                      {new Date(pub.fecha_actualizacion).toLocaleDateString(
+                        "es-CL",
+                        {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        }
+                      )}
+                    </dd>
+                  </div>
+                )}
+              </dl>
+            </div>
 
-          {/* Botón de acción */}
-          {pub.estado === "activa" && (
-            <div className="mt-8 pt-6 border-t border-gray-200">
+            {/* Botón de acción */}
+            {pub.estado === "activa" && (
+              <div className="mt-8 pt-6 border-t border-gray-200">
+                <button
+                  onClick={() => setShowModal(true)}
+                  className={`w-full sm:w-auto px-6 py-3 rounded-xl font-medium text-white transition-colors ${
+                    tipoKey === "servicio"
+                      ? "bg-emerald-600 hover:bg-emerald-700"
+                      : "bg-blue-600 hover:bg-blue-700"
+                  }`}
+                  type="button"
+                >
+                  Contactar
+                </button>
+              </div>
+            )}
+          </div>
+        </article>
+      </div>
+
+      {/* Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl">
+            {/* Header del modal */}
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-900">
+                Postular a: {pub.titulo}
+              </h3>
               <button
-                className={`w-full sm:w-auto px-6 py-3 rounded-xl font-medium text-white transition-colors ${
-                  tipoKey === "servicio"
-                    ? "bg-emerald-600 hover:bg-emerald-700"
-                    : "bg-blue-600 hover:bg-blue-700"
-                }`}
-                type="button"
+                onClick={closeModal}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+                disabled={sending}
               >
-                Contactar
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
-          )}
+
+            {/* Mensaje de éxito */}
+            {sendSuccess && (
+              <div className="mb-4 rounded-xl bg-emerald-50 p-4 ring-1 ring-emerald-200">
+                <p className="text-emerald-700 font-medium">
+                  ✓ Postulación enviada exitosamente
+                </p>
+              </div>
+            )}
+
+            {/* Mensaje de error */}
+            {sendError && (
+              <div className="mb-4 rounded-xl bg-red-50 p-4 ring-1 ring-red-200">
+                <p className="text-red-700 font-medium">{sendError}</p>
+              </div>
+            )}
+
+            {/* Formulario */}
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="mensaje" className="block text-sm font-medium text-gray-700 mb-2">
+                  Mensaje de postulación
+                </label>
+                <textarea
+                  id="mensaje"
+                  value={mensaje}
+                  onChange={(e) => setMensaje(e.target.value)}
+                  placeholder="Cuéntale al publicador por qué eres la persona indicada..."
+                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                  rows={6}
+                  disabled={sending || sendSuccess}
+                  maxLength={1000}
+                />
+                <p className="mt-2 text-sm text-gray-500">
+                  {mensaje.length}/1000 caracteres
+                </p>
+              </div>
+
+              {/* Botones */}
+              <div className="flex gap-3">
+                <button
+                  onClick={closeModal}
+                  className="flex-1 px-4 py-3 rounded-xl border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+                  disabled={sending}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handlePostular}
+                  disabled={sending || sendSuccess || !mensaje.trim()}
+                  className="flex-1 px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {sending ? "Enviando..." : "Enviar postulación"}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-      </article>
-    </div>
+      )}
+    </>
   );
 }
