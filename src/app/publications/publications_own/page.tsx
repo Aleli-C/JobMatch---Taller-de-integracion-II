@@ -24,7 +24,7 @@ export default async function Page({
 
         {/* Contenedor de las publicaciones */}
         <div className="space-y-4">
-          <PublicationCard searchParams={normalized} scope="mine" />
+          <PublicationCard searchParams={normalized} />
         </div>
       </section>
 
