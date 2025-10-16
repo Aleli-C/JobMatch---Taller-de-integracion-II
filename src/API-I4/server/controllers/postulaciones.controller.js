@@ -1,11 +1,34 @@
-const pool = require('../db'); // mysql2/promise
-
+// controllers/postulaciones.controller.js (CommonJS)
+const pool = require('../db');
 const ESTADOS = new Set(['aceptada', 'rechazada']);
 
+const isProd = process.env.NODE_ENV === 'production';
+
+// Fuente única de actor
+function getActorId(req) {
+  const fromCookie = Number(req.cookies?.uid || 0);
+  if (fromCookie) return fromCookie;
+
+  if (!isProd) {
+    const fromHeader = Number(req.header('x-user-id') || 0);
+    if (fromHeader) return fromHeader;
+    const fromQuery = Number(req.query.userId || 0);
+    if (fromQuery) return fromQuery;
+    const fromBody = Number(req.body?.id_postulante || 0);
+    if (fromBody) return fromBody;
+  }
+  return 0;
+}
+
+// PATCH /postulaciones/:id
 const patchPostulacion = async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!id) return res.status(400).json({ error: 'id inválido' });
+
+    // actorId disponible por si agregas autorización
+    const actorId = getActorId(req);
+    if (isProd && !actorId) return res.status(401).json({ error: 'No autenticado' });
 
     const { estado_postulacion } = req.body || {};
     const nuevoEstado = String(estado_postulacion || '').trim();
@@ -14,18 +37,16 @@ const patchPostulacion = async (req, res) => {
       return res.status(400).json({ error: "estado_postulacion debe ser 'aceptada' o 'rechazada'" });
     }
 
-    // Existe?
     const [[row]] = await pool.query(
       'SELECT id_postulacion, estado_postulacion FROM `Postulaciones` WHERE id_postulacion = ? LIMIT 1',
       [id]
     );
     if (!row) return res.status(404).json({ error: 'Postulación no encontrada' });
 
-    // Actualizar
     await pool.query(
       `UPDATE \`Postulaciones\`
-          SET \`estado_postulacion\` = ?, \`fecha\` = CURRENT_TIMESTAMP(3)
-        WHERE \`id_postulacion\` = ?`,
+         SET \`estado_postulacion\` = ?, \`fecha\` = CURRENT_TIMESTAMP(3)
+       WHERE \`id_postulacion\` = ?`,
       [nuevoEstado, id]
     );
 
@@ -38,36 +59,30 @@ const patchPostulacion = async (req, res) => {
   } catch (err) {
     console.error('patchPostulacion error:', err);
     return res.status(500).json({ error: 'Error al actualizar postulación' });
-      }
+  }
 };
 
+// POST /postulaciones
 const t = (s) => (typeof s === 'string' ? s.trim() : s);
-
 
 const createPostulacion = async (req, res) => {
   try {
-    const { id_publicacion, id_postulante, mensaje, estado_postulacion } = req.body || {};
+    const actorId = getActorId(req);
+    if (!actorId) return res.status(401).json({ error: 'No autenticado' });
 
-    if (!id_publicacion || !id_postulante) {
-      return res.status(400).json({ error: 'id_publicacion e id_postulante son obligatorios' });
+    const { id_publicacion, mensaje, estado_postulacion } = req.body || {};
+    if (!id_publicacion) {
+      return res.status(400).json({ error: 'id_publicacion es obligatorio' });
     }
 
-    // (Opcional mínimo) verificar existencia para dar error amigable
     const [[pub]] = await pool.query(
       'SELECT id_publicacion FROM `Publicaciones` WHERE id_publicacion = ? LIMIT 1',
       [Number(id_publicacion)]
     );
     if (!pub) return res.status(404).json({ error: 'Publicación no encontrada' });
 
-    const [[usr]] = await pool.query(
-      'SELECT id_usuario FROM `Usuarios` WHERE id_usuario = ? LIMIT 1',
-      [Number(id_postulante)]
-    );
-    if (!usr) return res.status(404).json({ error: 'Usuario (postulante) no encontrado' });
-
-    // construir INSERT con columnas presentes
     const cols = ['id_publicacion', 'id_postulante'];
-    const vals = [Number(id_publicacion), Number(id_postulante)];
+    const vals = [Number(id_publicacion), Number(actorId)]; // <- usa actorId, ignora body en prod
 
     if (mensaje !== undefined) { cols.push('mensaje'); vals.push(t(mensaje)); }
     if (estado_postulacion !== undefined) { cols.push('estado_postulacion'); vals.push(t(estado_postulacion)); }
@@ -83,7 +98,6 @@ const createPostulacion = async (req, res) => {
 
     return res.status(201).json(row);
   } catch (err) {
-    // Duplicado por UNIQUE(id_publicacion, id_postulante)
     if (err && err.code === 'ER_DUP_ENTRY') {
       return res.status(409).json({ error: 'Ya existe una postulación para este usuario y publicación' });
     }
@@ -92,17 +106,13 @@ const createPostulacion = async (req, res) => {
   }
 };
 
+// GET /mis_postulaciones
 const getMisPostulaciones = async (req, res) => {
   try {
-    const userIdHeader = req.header('x-user-id');
-    const userIdQuery = req.query.userId;
-    const userId = Number(userIdHeader || userIdQuery);
+    const userId = getActorId(req);
+    if (!userId) return res.status(401).json({ error: 'No autenticado' });
 
-    if (!userId) {
-      return res.status(400).json({ error: 'Falta userId (header x-user-id o query userId)' });
-    }
-
-    const limit = Math.max(1, Math.min(100, Number(req.query.limit || 20)));
+    const limit  = Math.max(1, Math.min(100, Number(req.query.limit || 20)));
     const offset = Math.max(0, Number(req.query.offset || 0));
 
     const sql = `
@@ -127,8 +137,4 @@ const getMisPostulaciones = async (req, res) => {
   }
 };
 
-module.exports = {
-  patchPostulacion,
-  createPostulacion,
-  getMisPostulaciones,
-};
+module.exports = { patchPostulacion, createPostulacion, getMisPostulaciones };
