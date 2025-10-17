@@ -147,7 +147,7 @@ const deletePostulacion = async (req, res) => {
     if (!actorId) return res.status(401).json({ error: 'No autenticado' });
 
     const [[row]] = await pool.query(
-      'SELECT id_postulacion, id_postulante FROM `Postulaciones` WHERE id_postulacion = ? LIMIT 1',
+      'SELECT id_postulacion, id_postulante FROM Postulaciones WHERE id_postulacion = ? LIMIT 1',
       [id]
     );
     if (!row) return res.status(404).json({ error: 'Postulación no encontrada' });
@@ -157,7 +157,7 @@ const deletePostulacion = async (req, res) => {
       return res.status(403).json({ error: 'No autorizado para eliminar esta postulación' });
     }
 
-    await pool.query('DELETE FROM `Postulaciones` WHERE id_postulacion = ?', [id]);
+    await pool.query('DELETE FROM Postulaciones WHERE id_postulacion = ?', [id]);
 
     return res.json({ success: true, id });
   } catch (err) {
