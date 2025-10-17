@@ -137,4 +137,33 @@ const getMisPostulaciones = async (req, res) => {
   }
 };
 
-module.exports = { patchPostulacion, createPostulacion, getMisPostulaciones };
+// DELETE /postulaciones/:id
+const deletePostulacion = async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!id) return res.status(400).json({ error: 'id inválido' });
+
+    const actorId = getActorId(req);
+    if (!actorId) return res.status(401).json({ error: 'No autenticado' });
+
+    const [[row]] = await pool.query(
+      'SELECT id_postulacion, id_postulante FROM Postulaciones WHERE id_postulacion = ? LIMIT 1',
+      [id]
+    );
+    if (!row) return res.status(404).json({ error: 'Postulación no encontrada' });
+
+    // Solo el postulante propietario puede eliminar (en prod se obliga a autenticación)
+    if (Number(row.id_postulante) !== Number(actorId)) {
+      return res.status(403).json({ error: 'No autorizado para eliminar esta postulación' });
+    }
+
+    await pool.query('DELETE FROM Postulaciones WHERE id_postulacion = ?', [id]);
+
+    return res.json({ success: true, id });
+  } catch (err) {
+    console.error('deletePostulacion error:', err);
+    return res.status(500).json({ error: 'Error al eliminar postulación' });
+  }
+};
+
+module.exports = { patchPostulacion, createPostulacion, getMisPostulaciones, deletePostulacion };
