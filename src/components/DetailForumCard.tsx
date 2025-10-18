@@ -1,6 +1,28 @@
 "use client";
-import type { ForumDetail } from "@/types/forum";
 
+export type ForoBase = {
+  id_foro: number;
+  id_usuario: number;
+  titulo: string;
+  consulta: string;
+  fecha: string; // ISO DATETIME(3)
+};
+
+export type ForoAutor = {
+  id_usuario: number;
+  nombres?: string | null;
+  apellidos?: string | null;
+  rol?: "admin" | "empleador" | "trabajador" | null;
+};
+
+export type ForumDetail = ForoBase & {
+  autor?: ForoAutor;
+  total_respuestas?: number;
+};
+
+/* ===========================================================
+   Helper local para formatear fechas
+   =========================================================== */
 function fmt(iso: string) {
   try {
     return new Intl.DateTimeFormat("es-CL", {
@@ -12,6 +34,9 @@ function fmt(iso: string) {
   }
 }
 
+/* ===========================================================
+   Componente: muestra título, autor, fecha y consulta
+   =========================================================== */
 export default function DetailForumCard({ post }: { post: ForumDetail }) {
   const nombreAutor =
     post.autor?.nombres || post.autor?.apellidos

@@ -1,5 +1,21 @@
 import * as React from "react";
-import type { Publication } from "../types/publication";
+
+export type Publication = {
+  id_publicacion: number;
+  id_usuario: number;
+  titulo: string;
+  descripcion: string;
+  direccion?: string | null;
+  horario?: string | null;
+  tipo?: string | null;
+  monto?: number | string | null;
+  horas?: string | null;
+  estado: "activa" | "pausada" | "cerrada" | "eliminada";
+  ciudad?: string | null;
+  region?: string | null;
+  created_at?: string | null;
+  fecha_actualizacion?: string | null;
+};
 
 const estadoStyle: Record<Publication["estado"], string> = {
   activa: "bg-emerald-50 text-emerald-700 ring-emerald-200",
