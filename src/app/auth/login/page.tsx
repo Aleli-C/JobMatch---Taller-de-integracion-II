@@ -27,18 +27,14 @@ export default function Login() {
 
     try {
       const res = await api.post("/login", payload);
-      // Cookie de sesión via Set-Cookie (recomendado) o JWT en body
       if (res.data?.token) {
-        // opcional si tu API devuelve JWT:
         localStorage.setItem("token", res.data.token);
-        // guarda el id para futuras requests
-        localStorage.setItem('uid', String(res.data.user.id_usuario));
+        localStorage.setItem("uid", String(res.data.user.id_usuario));
       }
-      window.location.href = "/"; // redirige donde corresponda
+      window.location.href = "/";
     } catch (err: any) {
       const resp = err?.response;
       if (resp) {
-        // Intenta mapear errores habituales { errors: { campo: [msg] } } o { message: '...' }
         const apiErrors = resp.data?.errors || {};
         setErrors({
           correo: apiErrors?.correo?.[0],
@@ -60,10 +56,10 @@ export default function Login() {
   const handleForgotPassword = () => (window.location.href = "/auth/reset");
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-login">
       <div className="flex items-center justify-center min-h-[calc(100vh-80px)] p-8">
-        <div className="w-full max-w-md">
-          <div className="bg-white rounded-lg shadow-lg p-8">
+        <div className="w-full max-w-md animate-slide-up">
+          <div className="bg-white rounded-lg shadow-lg p-8 animate-scale-in">
             <div className="text-center mb-6">
               <h2 className="text-2xl font-bold text-gray-900 mb-2">
                 Inicio de Sesión
@@ -75,7 +71,10 @@ export default function Login() {
 
             <form onSubmit={onSubmit} className="space-y-4">
               <div>
-                <label htmlFor="correo" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="correo"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Correo Electrónico
                 </label>
                 <input
@@ -83,9 +82,9 @@ export default function Login() {
                   id="correo"
                   name="correo"
                   placeholder="tu@ejemplo.com"
-                  className={`w-full px-3 py-3 border rounded-lg text-sm focus:outline-none focus:ring-2 transition-colors bg-gray-100 ${
-                    errors.correo ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-blue-500"
-                  }`}
+                  className={`w-full px-3 py-3 border rounded-lg text-sm bg-gray-100 transition-all duration-300 focus:outline-none focus:ring-2
+                    ${errors.correo ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-blue-500"}
+                    focus:bg-white focus:shadow-lg focus:shadow-blue-100 focus:scale-[1.01]`}
                 />
                 {errors.correo && (
                   <p className="text-red-500 text-xs mt-1">{errors.correo}</p>
@@ -93,7 +92,10 @@ export default function Login() {
               </div>
 
               <div>
-                <label htmlFor="contrasena" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="contrasena"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Contraseña
                 </label>
                 <input
@@ -101,16 +103,20 @@ export default function Login() {
                   id="contrasena"
                   name="contrasena"
                   placeholder="••••••••"
-                  className={`w-full px-3 py-3 border rounded-lg text-sm focus:outline-none focus:ring-2 transition-colors bg-gray-100 ${
-                    errors.contrasena ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-blue-500"
-                  }`}
+                  className={`w-full px-3 py-3 border rounded-lg text-sm bg-gray-100 transition-all duration-300 focus:outline-none focus:ring-2
+                    ${errors.contrasena ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-blue-500"}
+                    focus:bg-white focus:shadow-lg focus:shadow-blue-100 focus:scale-[1.01]`}
                 />
                 {errors.contrasena && (
                   <p className="text-red-500 text-xs mt-1">{errors.contrasena}</p>
                 )}
               </div>
 
-              <Button type="submit" disabled={pending} className="w-full">
+              <Button
+                type="submit"
+                disabled={pending}
+                className="w-full transition-transform duration-300 hover:-translate-y-0.5 active:translate-y-0.5 hover:shadow-lg"
+              >
                 {pending ? "Iniciando sesión..." : "Iniciar Sesión"}
               </Button>
             </form>
@@ -126,14 +132,20 @@ export default function Login() {
             </div>
 
             <div className="text-center mb-4">
-              <button onClick={handleForgotPassword} className="text-sm text-gray-600 hover:text-blue-600">
+              <button
+                onClick={handleForgotPassword}
+                className="text-sm text-gray-600 hover:text-blue-600 transition-colors"
+              >
                 ¿Olvidaste tu contraseña?
               </button>
             </div>
 
             <p className="text-center text-sm text-gray-600">
               ¿No tienes cuenta aún?{" "}
-              <button onClick={handleRegister} className="text-blue-600 hover:text-blue-800 font-medium">
+              <button
+                onClick={handleRegister}
+                className="text-blue-600 hover:text-blue-800 font-medium transition-colors underline-offset-4 hover:underline"
+              >
                 ¡Regístrate!
               </button>
             </p>
