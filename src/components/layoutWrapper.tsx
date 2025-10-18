@@ -36,10 +36,10 @@ export default function LayoutWrapper({
 
   // Rutas normales: Header + Footer
   return (
-    <>
-      <Header />
-      {children}
-      <Footer />
-    </>
+  <div className="flex min-h-screen flex-col">
+    <Header />
+    <main className="flex-1">{children}</main>
+    <Footer />
+</div>
   );
 }
